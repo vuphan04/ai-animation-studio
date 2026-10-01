@@ -7,6 +7,7 @@ import AISettingsPanel from './AISettingsPanel'
 import MediaPage from './MediaPage'
 import MediaSettingsPanel from './MediaSettingsPanel'
 import AcceptancePage from './AcceptancePage'
+import buildInfo from '../../../resources/app-build.json'
 
 type Page = 'setup' | 'registry' | 'planner' | 'shots' | 'inspector' | 'review' | 'voice' | 'cache' | 'media' | 'jobs' | 'settings' | 'acceptance'
 type Theme = 'day' | 'night'
@@ -57,12 +58,15 @@ export default function App() {
   const [page, setPage] = useState<Page>('setup')
   const [theme, setTheme] = useState<Theme>(() => document.documentElement.dataset.theme === 'day' ? 'day' : 'night')
   const [ready, setReady] = useState(false)
+  const [serverBuild, setServerBuild] = useState<string | null>(null)
   const [unrealConfigured, setUnrealConfigured] = useState(false)
   const [unrealSettings, setUnrealSettings] = useState<UnrealSettings | null>(null)
   const [editorPath, setEditorPath] = useState('')
   const [unrealProjectPath, setUnrealProjectPath] = useState('')
   const [settingsChecked, setSettingsChecked] = useState(false)
   const [settingsBusy, setSettingsBusy] = useState(false)
+  const [settingsError, setSettingsError] = useState('')
+  const [settingsNotice, setSettingsNotice] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
@@ -108,6 +112,13 @@ export default function App() {
   const selected = shots.find(s => s.id === shotId)
   const project = projects.find(p => p.id === projectId)
   const activePage = pages.find(p => p.id === page)!
+  const unrealPathsComplete = Boolean(editorPath.trim() && unrealProjectPath.trim())
+  const unrealDraftChanged = Boolean(unrealSettings && (
+    editorPath.trim() !== unrealSettings.editor_path || unrealProjectPath.trim() !== unrealSettings.project_path
+  ))
+  const unrealSaveHint = !unrealSettings ? 'Chưa tải được cấu hình. Bấm Tải lại để thử lại.'
+    : !unrealPathsComplete ? 'Chọn đủ tệp Unreal Editor và tệp .uproject để bật nút Lưu cấu hình.'
+    : 'Có thể bấm Lưu cấu hình ngay. Ứng dụng tự kiểm tra đường dẫn và plugin trước khi lưu.'
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -135,7 +146,7 @@ export default function App() {
   }, [projectId, shotId])
 
   useEffect(() => {
-    bootstrap().then(async () => { await loadUnrealSettings(); setReady(true); await refresh() }).catch(e => setError(errorLabel(e)))
+    bootstrap().then(async session => { setServerBuild(session.build_id); await loadUnrealSettings(); setReady(true); await refresh() }).catch(e => setError(errorLabel(e)))
   }, [])
 
   useEffect(() => {
@@ -173,36 +184,41 @@ export default function App() {
     setUnrealProjectPath(value.project_path)
     setUnrealConfigured(value.configured)
     setSettingsChecked(false)
+    setSettingsError(''); setSettingsNotice('')
   }
 
   async function browseUnreal(kind: 'editor' | 'project') {
-    setError(''); setSettingsBusy(true)
+    setError(''); setNotice(''); setSettingsError(''); setSettingsBusy(true)
+    setSettingsNotice('Đang mở hộp thoại chọn tệp Windows. Chọn tệp hoặc bấm Hủy để quay lại.')
     try {
       const picked = await api<{ path: string | null }>('/settings/unreal/browse', { kind })
       if (picked.path) {
         if (kind === 'editor') setEditorPath(picked.path)
         else setUnrealProjectPath(picked.path)
         setSettingsChecked(false)
+        setSettingsNotice('Đã chọn tệp. Khi đã chọn đủ hai tệp, bấm Lưu cấu hình.')
+      } else {
+        setSettingsNotice('Đã hủy chọn tệp. Đường dẫn hiện tại được giữ nguyên.')
       }
-    } catch (e) { setError(errorLabel(e)) }
+    } catch (e) { setSettingsNotice(''); setSettingsError(errorLabel(e)) }
     finally { setSettingsBusy(false) }
   }
 
   async function checkSettings() {
-    setError(''); setNotice(''); setSettingsBusy(true)
+    setError(''); setNotice(''); setSettingsError(''); setSettingsNotice('Đang kiểm tra đường dẫn và plugin…'); setSettingsBusy(true)
     try {
       const result = await api<{ message: string }>('/settings/unreal/validate', {
         editor_path: editorPath, project_path: unrealProjectPath
       })
       setSettingsChecked(true)
-      setNotice(result.message)
-    } catch (e) { setSettingsChecked(false); setError(errorLabel(e)) }
+      setSettingsNotice(result.message)
+    } catch (e) { setSettingsChecked(false); setSettingsNotice(''); setSettingsError(errorLabel(e)) }
     finally { setSettingsBusy(false) }
   }
 
   async function saveSettings() {
-    if (!unrealSettings) return
-    setError(''); setNotice(''); setSettingsBusy(true)
+    if (!unrealSettings || !unrealPathsComplete || settingsBusy) return
+    setError(''); setNotice(''); setSettingsError(''); setSettingsNotice('Đang kiểm tra và lưu cấu hình…'); setSettingsBusy(true)
     try {
       const saved = await api<UnrealSettings>('/settings/unreal', {
         editor_path: editorPath, project_path: unrealProjectPath, expected_revision: unrealSettings.revision
@@ -213,8 +229,19 @@ export default function App() {
       setUnrealConfigured(saved.configured)
       setUnrealPreview(null); setUnrealPreflight(false)
       setSettingsChecked(false)
-      setNotice('Đã lưu cấu hình Unreal trên máy này. Bước tiếp theo: kiểm tra trong Unreal bằng project và asset thật.')
-    } catch (e) { setError(errorLabel(e)) }
+      setSettingsNotice('Đã lưu cấu hình Unreal trên máy này. Cấu hình được giữ sau khi khởi động lại; việc chạy trên project và asset thật cần kiểm chứng riêng.')
+    } catch (e) { setSettingsChecked(false); setSettingsNotice(''); setSettingsError(errorLabel(e)) }
+    finally { setSettingsBusy(false) }
+  }
+
+  async function reloadSettings() {
+    setSettingsBusy(true); setSettingsError(''); setSettingsNotice('Đang tải cấu hình đã lưu…')
+    try {
+      const session = await bootstrap()
+      setServerBuild(session.build_id)
+      await loadUnrealSettings()
+      setSettingsNotice('Đã tải cấu hình đang lưu trên máy này.')
+    } catch (e) { setSettingsNotice(''); setSettingsError(errorLabel(e)) }
     finally { setSettingsBusy(false) }
   }
 
@@ -350,17 +377,22 @@ export default function App() {
       {page === 'settings' && <div className="settings-layout">
         <AISettingsPanel />
         <MediaSettingsPanel />
-        <section className="panel"><div className="panel-heading"><div><h3>Kết nối Unreal trên máy này</h3><p>Chọn hai tệp bằng nút Duyệt, kiểm tra rồi lưu. Cấu hình được giữ sau khi khởi động lại app.</p></div><Status value={unrealConfigured ? 'CURRENT' : 'BLOCKED'} /></div>
+        <section className="panel" aria-busy={settingsBusy}><div className="panel-heading"><div><h3>Kết nối Unreal trên máy này</h3><p>Chọn hai tệp bằng nút Duyệt rồi bấm Lưu cấu hình. Ứng dụng kiểm tra trước khi lưu; nút Kiểm tra đường dẫn dùng để kiểm tra riêng.</p></div><span className={`status ${settingsError || unrealSettings?.error ? 'warning' : unrealDraftChanged || !unrealConfigured ? 'neutral' : 'success'}`}>{unrealDraftChanged ? 'Chưa lưu' : unrealSettings?.error ? 'Cần sửa cấu hình' : unrealConfigured ? 'Đã lưu' : 'Chưa cấu hình'}</span></div>
+          <p className="help">Bản giao diện: {buildInfo.build_id} · Máy chủ: {serverBuild ?? 'bản cũ chưa cung cấp phiên bản'}.</p>
+          {ready && serverBuild !== buildInfo.build_id && <div className="alert error" role="alert">Máy chủ đang chạy khác phiên bản giao diện. Đóng cửa sổ launcher đang chạy, mở lại Start-Studio.cmd rồi tải lại trang để dùng bản cập nhật.</div>}
           <div className="settings-fields">
-            <div className="setting-file"><label className="field grow">Unreal Editor (UnrealEditor-Cmd.exe)<input value={editorPath} onChange={e => { setEditorPath(e.target.value); setSettingsChecked(false) }} placeholder="C:\Program Files\Epic Games\UE_5.5\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" spellCheck={false} /></label><button type="button" disabled={settingsBusy} onClick={() => browseUnreal('editor')}>Duyệt…</button></div>
-            <div className="setting-file"><label className="field grow">Project Unreal (.uproject)<input value={unrealProjectPath} onChange={e => { setUnrealProjectPath(e.target.value); setSettingsChecked(false) }} placeholder="D:\UEProjects\StudioP2_TEST\StudioP2_TEST.uproject" spellCheck={false} /></label><button type="button" disabled={settingsBusy} onClick={() => browseUnreal('project')}>Duyệt…</button></div>
+            <div className="setting-file"><label className="field grow">Unreal Editor (UnrealEditor-Cmd.exe hoặc UnrealEditor.exe)<input value={editorPath} disabled={settingsBusy} onChange={e => { setEditorPath(e.target.value); setSettingsChecked(false); setSettingsError(''); setSettingsNotice('') }} placeholder="Chưa chọn tệp Unreal Editor — bấm Duyệt…" aria-describedby="unreal-settings-help" spellCheck={false} /></label><button type="button" aria-label="Duyệt tệp Unreal Editor" disabled={settingsBusy} onClick={() => browseUnreal('editor')}>Duyệt…</button></div>
+            <div className="setting-file"><label className="field grow">Project Unreal (.uproject)<input value={unrealProjectPath} disabled={settingsBusy} onChange={e => { setUnrealProjectPath(e.target.value); setSettingsChecked(false); setSettingsError(''); setSettingsNotice('') }} placeholder="Chưa chọn project Unreal — bấm Duyệt…" aria-describedby="unreal-settings-help" spellCheck={false} /></label><button type="button" aria-label="Duyệt project Unreal" disabled={settingsBusy} onClick={() => browseUnreal('project')}>Duyệt…</button></div>
           </div>
-          <div className="actions"><button disabled={settingsBusy || !editorPath.trim() || !unrealProjectPath.trim()} onClick={checkSettings}>Kiểm tra đường dẫn</button><button className="button-primary" disabled={settingsBusy || !settingsChecked} onClick={saveSettings}>Lưu cấu hình</button><button className="button-quiet" disabled={settingsBusy} onClick={() => loadUnrealSettings().catch(e => setError(errorLabel(e)))}>Tải lại</button></div>
+          <p id="unreal-settings-help" className="help">{unrealSaveHint}</p>
+          <div className="actions"><button disabled={settingsBusy || !unrealPathsComplete} onClick={checkSettings}>Kiểm tra đường dẫn</button><button className="button-primary" disabled={settingsBusy || !unrealPathsComplete || !unrealSettings} title={unrealSaveHint} onClick={saveSettings}>Lưu cấu hình</button><button className="button-quiet" disabled={settingsBusy} onClick={reloadSettings}>Tải lại</button></div>
+          {settingsError && <div className="alert error settings-result" role="alert">Không lưu hoặc kiểm tra được cấu hình: {settingsError}</div>}
+          {settingsNotice && <div className="preflight ready settings-result" role="status">{settingsNotice}</div>}
           {unrealSettings?.error && <div className="preflight blocked settings-result">Cấu hình đã lưu cần sửa: {unrealSettings.error}</div>}
           {settingsChecked && <div className="preflight ready settings-result">Đường dẫn và plugin hợp lệ. Lưu cấu hình để dùng cho công việc Unreal.</div>}
-          <p className="help">Nguồn hiện tại: {unrealSettings?.source === 'APP' ? 'đã lưu trong app' : 'biến môi trường cũ hoặc chưa có cấu hình'}. Trạng thái này chưa xác nhận asset, Sequencer hoặc phiên bản Unreal thực tế.</p>
+          <p className="help">Nguồn hiện tại: {unrealSettings?.source === 'APP' ? 'đã lưu trong app' : unrealSettings?.editor_path || unrealSettings?.project_path ? 'cấu hình môi trường cũ' : 'chưa lưu cấu hình'}. Trạng thái này chưa xác nhận asset, Sequencer hoặc phiên bản Unreal thực tế.</p>
         </section>
-        <section className="panel settings-guide"><div className="panel-heading"><div><h3>Cần chuẩn bị gì?</h3><p>Việc chọn đường dẫn không tự tạo project hay tài nguyên Unreal.</p></div></div><ol><li>Cài Unreal Engine 5.5 trên máy dùng để kiểm thử.</li><li>Tạo hoặc mở project <code>.uproject</code> có map, nhân vật và animation thật.</li><li>Bật ba plugin: PythonScriptPlugin, EditorScriptingUtilities, SequencerScripting.</li><li>Nhập đường dẫn asset/actor thật vào Thư viện, duyệt cảnh rồi vào Công việc để chạy preflight.</li></ol></section>
+        <section className="panel settings-guide"><div className="panel-heading"><div><h3>Cần chuẩn bị gì?</h3><p>Việc chọn đường dẫn không tự tạo project hay tài nguyên Unreal.</p></div></div><ol><li>Chọn Unreal Editor đang cài trên máy. Có thể lưu đường dẫn UE 5.8; agent lắp dựng hiện giới hạn UE 5.5, chưa kiểm chứng thực thi trên 5.8.</li><li>Tạo hoặc mở project <code>.uproject</code> có map, nhân vật và animation thật.</li><li>Bật ba plugin: PythonScriptPlugin, EditorScriptingUtilities, SequencerScripting.</li><li>Nhập đường dẫn asset/actor thật vào Thư viện, duyệt cảnh rồi vào Công việc để chạy preflight.</li></ol></section>
       </div>}
 
       {page === 'setup' && <div className="layout-two">

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import secrets
 import sqlite3
@@ -291,6 +292,7 @@ class MediaSettingsIn(Strict):
 
 
 def create_app(data_root: Path | None = None, *, testing: bool = False, worker: bool = True) -> FastAPI:
+    build_id = json.loads((Path(__file__).resolve().parents[3] / "resources" / "app-build.json").read_text(encoding="utf-8"))["build_id"]
     root = data_root or Path(os.environ.get("STUDIO_DATA_ROOT", Path(__file__).resolve().parents[3] / "data"))
     studio = Studio(Path(root))
     performance = PerformanceService(studio)
@@ -430,14 +432,14 @@ def create_app(data_root: Path | None = None, *, testing: bool = False, worker: 
     @app.get("/health")
     def health():
         return {"status": "ok", "adapter_kind": studio.adapter.kind,
-                "unreal_configured": studio.unreal_settings()["configured"]}
+                "unreal_configured": studio.unreal_settings()["configured"], "build_id": build_id}
 
     @app.get("/session")
     def session():
         token = secrets.token_urlsafe(32)
         sessions.add(token)
         response = JSONResponse({"session_token": token, "adapter_kind": studio.adapter.kind,
-                                 "unreal_configured": studio.unreal_settings()["configured"]})
+                                 "unreal_configured": studio.unreal_settings()["configured"], "build_id": build_id})
         response.set_cookie("studio_session", token, httponly=True, secure=False, samesite="strict")
         response.headers["Cache-Control"] = "no-store"
         return response

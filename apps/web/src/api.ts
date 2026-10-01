@@ -18,12 +18,12 @@ export type Preview = { changed_fields: string[]; affected_subsystems: string[];
 
 let sessionToken = ''
 
-export async function bootstrap(): Promise<{ unreal_configured: boolean }> {
+export async function bootstrap(): Promise<{ unreal_configured: boolean; build_id: string | null }> {
   const response = await fetch('/api/session', { credentials: 'same-origin', cache: 'no-store' })
   if (!response.ok) throw new Error(`Không mở được phiên làm việc (HTTP ${response.status}).`)
   const data = await response.json()
   sessionToken = data.session_token
-  return { unreal_configured: Boolean(data.unreal_configured) }
+  return { unreal_configured: Boolean(data.unreal_configured), build_id: typeof data.build_id === 'string' ? data.build_id : null }
 }
 
 export async function api<T>(path: string, body?: unknown): Promise<T> {

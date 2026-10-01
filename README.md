@@ -118,10 +118,19 @@ Repository lưu mã nguồn và dependency lockfiles. Không kèm môi trường
 1. Tải toàn bộ repository bằng **Code → Download ZIP** hoặc clone, rồi giải nén.
 2. Cài sẵn **Python 3.14** (có Python Launcher `py`) và **Node.js 24** trên máy.
 3. Nhấp đúp **[Start-Studio.cmd](Start-Studio.cmd)** ngay ở thư mục gốc.
-4. Lần đầu, file tự tạo `.venv`, cài thư viện backend và build giao diện; cần Internet để tải dependency.
+4. Lần đầu, file tự tạo `.venv`, cài thư viện backend và build giao diện; cần Internet để tải dependency. Mỗi lần mở, launcher kiểm tra mã nguồn và checksum bản build để tự cập nhật giao diện cũ hoặc thiếu/hỏng. Nếu không thay đổi thì không build lại.
 5. Khi sẵn sàng, trình duyệt mở `http://127.0.0.1:8000/`. Giữ cửa sổ launcher mở trong lúc dùng.
 
 Không cần gõ lệnh để khởi chạy. File launcher cần đi cùng toàn bộ mã nguồn; tải riêng một file `.cmd` không đủ để chạy app. Nó không tự cài Python, Node.js hoặc Unreal Engine. Nếu một bước thất bại, cửa sổ giữ thông báo lỗi để đọc; sau khi khắc phục có thể mở lại file.
+
+### Cập nhật ứng dụng trên máy kiểm thử Unreal
+
+1. Đóng cửa sổ launcher của app đang chạy.
+2. Tải toàn bộ source mới từ GitHub bằng **Code → Download ZIP** rồi chép các file source vào thư mục app hiện tại. Giữ nguyên thư mục `data`, project Unreal và media; repository không chứa các dữ liệu này. Giữ `.venv` đã tạo trên chính máy đó, không chép `.venv` từ máy khác.
+3. Nhấp đúp **Start-Studio.cmd**. Launcher tự cập nhật giao diện; nếu dependency đổi có thể cần Internet. Shortcut cũ dùng `tools\Start-Studio.cmd` cũng chuyển qua cùng launcher này.
+4. Trong **Cài đặt → Kết nối Unreal**, bản sửa nút Lưu hiển thị **Bản giao diện: 2026.10.01.2 · Máy chủ: 2026.10.01.2**. Chọn đủ hai tệp rồi bấm **Lưu cấu hình**. Nếu vẫn thấy câu “kiểm tra rồi lưu” thì đang mở bản giao diện cũ.
+
+Launcher không tự đóng app phiên bản cũ đang chạy. Nếu được báo khác phiên bản, đóng cửa sổ launcher cũ rồi mở lại. Trang HTML dùng `Cache-Control: no-store`; URL mở từ launcher có mã phiên bản để tránh dùng trang đã cache ở lần cập nhật.
 
 ### Dựng source thủ công dành cho người phát triển
 
@@ -145,13 +154,17 @@ Sau khi dựng xong:
 
 Shortcut sử dụng icon capybara trong `assets/launcher`. File `.lnk` chứa đường dẫn tuyệt đối nên được tạo trên từng máy và không được đưa lên GitHub. Khi chuyển thư mục hoặc máy, tạo lại shortcut. Không copy `.venv` từ máy khác.
 
-Khởi chạy lại khi server Studio đã chạy sẽ mở phiên đang có. Nếu cổng 8000 thuộc ứng dụng khác, launcher báo xung đột. Khi sửa Python cần khởi động lại backend; khi sửa frontend cần build lại giao diện.
+Khởi chạy lại khi server Studio cùng phiên bản đang chạy sẽ mở phiên đang có. Nếu server là bản cũ, launcher yêu cầu đóng cửa sổ cũ và mở lại; nếu cổng 8000 thuộc ứng dụng khác, launcher báo xung đột. Khi sửa Python cần khởi động lại backend. Khi sửa frontend, launcher tự build lại ở lần mở tiếp theo.
 
 ## 8. Cấu hình và sử dụng trong app
 
 ### Unreal Engine
 
-Vào **Cài đặt**, chọn `UnrealEditor-Cmd.exe` và `.uproject` bằng nút **Duyệt…**. Kiểm tra đường dẫn rồi lưu. Project cần các plugin PythonScriptPlugin, EditorScriptingUtilities và SequencerScripting mà agent sử dụng. Chọn đúng phiên bản và thực hiện trên bản sao project trước.
+Vào **Cài đặt**, chọn `UnrealEditor-Cmd.exe` (hoặc `UnrealEditor.exe`) và `.uproject` bằng nút **Duyệt…**, rồi bấm **Lưu cấu hình**. Nút Lưu bật khi đã chọn đủ hai tệp; ứng dụng tự kiểm tra đường dẫn và plugin trước khi lưu. **Kiểm tra đường dẫn** là thao tác kiểm tra riêng, không phải bước bắt buộc để bật nút Lưu. Nếu chưa chọn tệp, ô nhập hiển thị “Chưa chọn…”; đó không phải đường dẫn đã cấu hình.
+
+Project cần các plugin PythonScriptPlugin, EditorScriptingUtilities và SequencerScripting mà agent sử dụng. Nếu tệp hoặc plugin không hợp lệ, lỗi xuất hiện ngay trong khung cấu hình và các đường dẫn đã lưu trước đó được giữ nguyên. Cấu hình lưu trong SQLite, được giữ qua lần khởi động lại. Chọn đúng phiên bản và thực hiện trên bản sao project trước; trạng thái **Đã lưu** chưa xác nhận integration Unreal thật.
+
+Có thể lưu đường dẫn và descriptor project ghi UE 5.8 khi validation hợp lệ. Agent thực thi hiện kiểm tra và giới hạn **UE 5.5**; thực thi Sequencer/retarget trên UE 5.8 chưa được kiểm chứng và sẽ bị chặn bởi kiểm tra phiên bản hiện có. Lưu cấu hình UE 5.8 không thay gate này.
 
 Trong **Thư viện**, đăng ký đường dẫn asset, anchor và profile từ tài nguyên thật do người vận hành xác nhận. Trong **Công việc → Lắp dựng Unreal**, chọn tập cùng 3–5 cảnh đã duyệt, xem kế hoạch, chạy preflight rồi xếp việc. Nhãn **UNREAL CHƯA CẤU HÌNH** nghĩa là chưa có cấu hình hợp lệ để sử dụng đường Unreal; những công việc mô phỏng vẫn tách riêng.
 

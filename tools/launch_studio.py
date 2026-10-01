@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import socket
 import sys
@@ -13,16 +14,22 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-URL = "http://127.0.0.1:8000/"
-HEALTH = URL + "api/health"
+BUILD_ID = json.loads((ROOT / "resources" / "app-build.json").read_text(encoding="utf-8"))["build_id"]
+URL = "http://127.0.0.1:8000/?v=" + BUILD_ID
+HEALTH = "http://127.0.0.1:8000/api/health"
+
+
+def running_studio() -> dict | None:
+    try:
+        with urllib.request.urlopen(HEALTH, timeout=1) as response:
+            data = json.loads(response.read())
+            return data if response.status == 200 and isinstance(data, dict) and data.get("adapter_kind") == "FAKE_CONTROL_FLOW" else None
+    except (OSError, ValueError, urllib.error.URLError):
+        return None
 
 
 def existing_studio() -> bool:
-    try:
-        with urllib.request.urlopen(HEALTH, timeout=1) as response:
-            return response.status == 200 and b'"adapter_kind":"FAKE_CONTROL_FLOW"' in response.read()
-    except (OSError, urllib.error.URLError):
-        return False
+    return running_studio() is not None
 
 
 def port_busy() -> bool:
@@ -43,7 +50,11 @@ def main() -> int:
     parser.add_argument("--no-browser", action="store_true", help="Keep the server running without opening a browser")
     args = parser.parse_args()
 
-    if existing_studio():
+    running = running_studio()
+    if running:
+        if running.get("build_id") != BUILD_ID:
+            print("Ứng dụng đang chạy bản cũ. Đóng cửa sổ launcher đang chạy rồi mở lại Start-Studio.cmd để cập nhật.", file=sys.stderr)
+            return 1
         print(f"AI Animation Studio is already running at {URL}")
         if not args.no_browser:
             webbrowser.open(URL)

@@ -28,6 +28,14 @@ def create_standalone_app(
             yield
 
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
+
+    @app.middleware("http")
+    async def ui_cache_policy(request, call_next):
+        response = await call_next(request)
+        if request.url.path in ("/", "/index.html"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
     app.mount("/api", api)
     app.mount("/", StaticFiles(directory=dist, html=True), name="web")
     return app

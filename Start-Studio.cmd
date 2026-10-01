@@ -22,15 +22,8 @@ if errorlevel 1 (
   if errorlevel 1 goto :backend_error
 )
 
-if not exist "%STUDIO_ROOT%apps\web\dist\index.html" (
-  echo [3/3] Đang chuẩn bị giao diện. Lần đầu cần kết nối Internet...
-  where npm.cmd >nul 2>&1
-  if errorlevel 1 goto :node_missing
-  call npm.cmd ci --prefix "%STUDIO_ROOT%apps\web"
-  if errorlevel 1 goto :frontend_error
-  call npm.cmd run build --prefix "%STUDIO_ROOT%apps\web"
-  if errorlevel 1 goto :frontend_error
-)
+"%STUDIO_PYTHON%" "%STUDIO_ROOT%tools\prepare_web.py"
+if errorlevel 1 goto :frontend_error
 
 if /I "%~1"=="--check" (
   echo Sẵn sàng khởi chạy AI Animation Studio.
@@ -47,10 +40,6 @@ exit /b %STUDIO_EXIT%
 :python_missing
 echo Chưa có Python 3.14 hoặc chưa tạo được môi trường Python.
 echo Cài Python 3.14 từ https://www.python.org/downloads/ rồi mở lại Start-Studio.cmd.
-goto :failed
-
-:node_missing
-echo Chưa tìm thấy Node.js/npm. Cài Node.js 24 từ https://nodejs.org/ rồi mở lại Start-Studio.cmd.
 goto :failed
 
 :backend_error
