@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Voice fixture receipt P3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "operation_id", "input_hash", "take_id", "version", "relative_path", "adapter_kind", "provider_id", "provider_request_id", "sample_rate", "sample_count", "duration_seconds", "wav_sha256", "audio_kind"],
+  "properties": {
+    "schema_version": {"const": "p3.voice-receipt.1"},
+    "operation_id": {"type": "string"}, "input_hash": {"type": "string"},
+    "take_id": {"type": "string"}, "version": {"type": "integer", "minimum": 1},
+    "relative_path": {"type": "string"}, "adapter_kind": {"const": "LOCAL_VOICE_FIXTURE"},
+    "provider_id": {"const": "local-fixture-v1"}, "provider_request_id": {"type": "string"},
+    "sample_rate": {"type": "integer"}, "sample_count": {"type": "integer"},
+    "duration_seconds": {"type": "string"}, "wav_sha256": {"type": "string"},
+    "audio_kind": {"const": "SYNTHETIC_TONE_NOT_SPEECH"}
+  }
+}

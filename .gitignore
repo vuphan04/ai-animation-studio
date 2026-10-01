@@ -1,0 +1,62 @@
+# Dependencies, generated files and local runtime data
+.venv/
+.tmp/
+data/
+node_modules/
+dist/
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+*.lnk
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+.codex/
+.agents/
+
+# Secrets and local credentials
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+credentials.*.json
+secrets.json
+secrets.*.json
+
+# User requested: no test files, fixtures, test projects or QA evidence
+tests/
+test/
+fixtures/
+samples/
+test_*.py
+*_test.py
+*.test.*
+*.spec.*
+.pytest_cache/
+.coverage*
+htmlcov/
+tools/spikes/
+tools/qa_*
+tools/smoke_*
+tools/check_phase*
+tools/verify_phase*
+tools/p7_restart_child.py
+services/api/studio/seed.py
+
+# The application needs the capability profile at runtime; reports stay local.
+docs/*
+!docs/capability-profile.json
+
+# User requested: README is the only Markdown file in the repository
+*.[mM][dD]
+*.[mM][dD][xX]
+!/README.md

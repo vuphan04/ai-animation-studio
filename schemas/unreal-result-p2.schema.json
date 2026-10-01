@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ai-animation-studio.invalid/schemas/unreal-result-p2.schema.json",
+  "title": "AI Animation Studio Unreal observed result",
+  "type": "object",
+  "required": ["schema_version", "adapter_kind", "operation_id", "input_hash", "status"],
+  "properties": {
+    "schema_version": {"const": "p2.result.1"},
+    "adapter_kind": {"const": "UNREAL_EDITOR_PYTHON"},
+    "engine_version": {"type": "string", "pattern": "^5\\.5\\."},
+    "operation_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "input_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["PREFLIGHT", "APPLIED", "OBSERVED", "BLOCKED"]},
+    "master_path": {"type": "string"}, "world_path": {"type": "string"},
+    "output_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "observation": {"type": "object"}, "shots": {"type": "array"},
+    "error": {"type": "string"}
+  },
+  "additionalProperties": false
+}

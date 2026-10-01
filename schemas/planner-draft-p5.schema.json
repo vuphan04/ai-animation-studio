@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ai-animation-studio.invalid/schemas/planner-draft-p5.schema.json",
+  "title": "AI Animation Studio planner response p5.draft.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scenes", "shots", "unresolved_requirements"],
+  "properties": {
+    "schema_version": {"const": "p5.draft.1"},
+    "scenes": {
+      "type": "array", "minItems": 1, "maxItems": 30,
+      "items": {"type": "object", "additionalProperties": false,
+        "required": ["scene_id", "heading", "action_summary"],
+        "properties": {"scene_id": {"type": "string", "minLength": 1}, "heading": {"type": "string", "minLength": 1}, "action_summary": {"type": "string", "minLength": 1}}
+      }
+    },
+    "shots": {
+      "type": "array", "minItems": 1, "maxItems": 30,
+      "items": {"type": "object", "additionalProperties": false,
+        "required": ["scene_id", "manifest", "action_intent", "cinematography_intent", "dialogue_translation_drafts"],
+        "properties": {
+          "scene_id": {"type": "string", "minLength": 1},
+          "manifest": {"$ref": "shot-manifest-v1.schema.json"},
+          "action_intent": {"type": "string", "minLength": 1},
+          "cinematography_intent": {"type": "string", "minLength": 1},
+          "dialogue_translation_drafts": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+            "required": ["performance_id", "source_text", "draft_text", "source_language", "target_language", "source_kind"],
+            "properties": {
+              "performance_id": {"type": "string"}, "source_text": {"type": "string"}, "draft_text": {"type": "string"},
+              "source_language": {"type": "string"}, "target_language": {"type": "string"},
+              "source_kind": {"enum": ["LOCAL_FIXTURE_COPY", "MODEL_DRAFT"]}
+            }
+          }}
+        }
+      }
+    },
+    "unresolved_requirements": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "$comment": "Backend also rejects authority/path fields recursively and resolves registry, compatibility, shot-local timing, overlap and cost before apply. Prose in screenplay is data, never an instruction."
+}

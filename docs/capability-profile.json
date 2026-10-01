@@ -1,0 +1,25 @@
+{
+  "schema_version": "p0.1",
+  "phase": "P0",
+  "gate_status": "blocked",
+  "updated_at_utc": "2026-09-30T03:24:31Z",
+  "evidence": "docs/evidence/p0-host-probe.json",
+  "sample_project_evidence": "docs/evidence/p0-sample-project-probe.json",
+  "target_hardware_from_design": {"gpu": "RTX 5070 Ti", "vram_gb": 16, "ram_gb": 32},
+  "observed_hardware": {"gpu": "NVIDIA GeForce RTX 5070", "vram_mib": 12227, "ram_bytes": 34088599552},
+  "capabilities": {
+    "host_inventory": {"status": "supported", "version": "probe_host.py p0.1", "evidence": ["docs/evidence/p0-host-probe.json"], "reproduce": "py -3.14 tools/spikes/probe_host.py --output docs/evidence/p0-host-probe.json"},
+    "sample_project_descriptor": {"status": "supported", "version": "UE 5.5 target; editor open unverified", "evidence": ["samples/unreal/AIAnimationP0/AIAnimationP0.uproject", "docs/evidence/p0-sample-project-probe.json"], "reproduce": "py -3.14 tools/spikes/probe_host.py --project samples/unreal/AIAnimationP0/AIAnimationP0.uproject"},
+    "unreal_editor": {"status": "blocked", "version": null, "evidence": ["UE_5.5 folder exists; UnrealEditor-Cmd.exe absent in observed path"], "reproduce": "Run probe_host.py with --unreal-root pointing to a complete install"},
+    "sequence_write_and_exact_binding": {"status": "blocked", "version": null, "evidence": ["No .uproject or two actors; no Unreal editor binary", "tools/spikes/a-sequencer.md"], "reproduce": "Follow tools/spikes/a-sequencer.md on a copy of a real project"},
+    "retarget": {"status": "blocked", "version": null, "evidence": ["No clip, skeleton pair or approved retarget profile", "tools/spikes/b-retarget.md"], "reproduce": "Follow tools/spikes/b-retarget.md"},
+    "facial_audio_track": {"status": "blocked", "version": null, "evidence": ["No facial plugin/version, character or audio fixture", "tools/spikes/c-facial.md"], "reproduce": "Follow tools/spikes/c-facial.md"},
+    "black_eye_camera": {"status": "blocked", "version": null, "evidence": ["Black Eye plugin/version and test camera unavailable", "tools/spikes/d-camera.md"], "reproduce": "Follow tools/spikes/d-camera.md"},
+    "hair_cloth_niagara_cache_playback": {"status": "blocked", "version": null, "evidence": ["No groom/cloth/Niagara assets, cache playback or MRQ render", "tools/spikes/e-cache-render.md"], "reproduce": "Follow tools/spikes/e-cache-render.md"},
+    "final_render": {"status": "blocked", "version": null, "evidence": ["Required hair/cloth cache and critical Niagara Sim Cache playback unverified"], "reproduce": "Complete spike E and verify exact cache fingerprint and coverage"},
+    "gpu_model_runtime": {"status": "blocked", "version": null, "evidence": ["No selected local model/runtime or measured workload; VRAM capacity alone is insufficient"], "reproduce": "Choose model/version then measure cold/warm peak VRAM, RAM and time with UE and model separately"},
+    "seedance_provider": {"status": "blocked", "version": null, "evidence": ["Provider, model version, account/API access and approved budget unknown"], "reproduce": "Choose exact provider/model and verify official capability contract with a budgeted live request"},
+    "foley_worker": {"status": "blocked", "version": null, "evidence": ["No selected Foley model/runtime or picture-locked fixture"], "reproduce": "Select exact model/version and benchmark against locked picture revision"},
+    "resolve_handoff": {"status": "blocked", "version": null, "evidence": ["Resolve executable/project/profile and import test unavailable"], "reproduce": "Choose exchange format, export a short package and import into Resolve"}
+  }
+}

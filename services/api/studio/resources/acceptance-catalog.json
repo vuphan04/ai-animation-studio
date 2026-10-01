@@ -1,0 +1,422 @@
+[
+  {
+    "id": "TC-01",
+    "title": "Tạo và khôi phục project",
+    "priority": "High",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-02",
+    "title": "Reject manifest không hợp lệ",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-03",
+    "title": "Registry ID hoặc compatibility sai",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-04",
+    "title": "Tính frame [in,out) và FPS rational",
+    "priority": "High",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-05",
+    "title": "Dialogue overflow và overlap",
+    "priority": "High",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-06",
+    "title": "Approval theo đúng revision",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-07",
+    "title": "Tạo master và shot sequence",
+    "priority": "High",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-08",
+    "title": "Actor binding không nhầm nhân vật",
+    "priority": "Critical",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-09",
+    "title": "Environment và anchor mapping",
+    "priority": "High",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-10",
+    "title": "Rerun assembly không tạo bản trùng",
+    "priority": "Critical",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-11",
+    "title": "Retarget reuse và invalidate profile",
+    "priority": "High",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-12",
+    "title": "Paired animation đồng bộ",
+    "priority": "High",
+    "execution": "UE+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-13",
+    "title": "Voice đúng dialogue/voice version",
+    "priority": "High",
+    "execution": "AUTO+LIVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-14",
+    "title": "Voice lock và timing revision",
+    "priority": "High",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-15",
+    "title": "Face/audio đặt chính xác frame",
+    "priority": "Critical",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-16",
+    "title": "Chất lượng lip sync sau solve",
+    "priority": "High",
+    "execution": "MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-17",
+    "title": "Ba kiểu camera tự động",
+    "priority": "High",
+    "execution": "UE+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-18",
+    "title": "Adopt chỉnh camera ngoài app",
+    "priority": "Critical",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-19",
+    "title": "Bảo vệ manual lock mọi subsystem",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-20",
+    "title": "Lock sau enqueue, trước write",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-21",
+    "title": "Xung đột hai lệnh edit/approve",
+    "priority": "High",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-22",
+    "title": "LOCKED + STALE vẫn giữ nội dung",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-23",
+    "title": "Body đổi làm cache và render stale",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-24",
+    "title": "Camera đổi không invalidate dư",
+    "priority": "High",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-25",
+    "title": "Final render bị chặn nếu thiếu hair/cloth cache",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-26",
+    "title": "Fingerprint cache mismatch",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-27",
+    "title": "Cache range và file integrity",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-28",
+    "title": "Render lặp hair/cloth/Niagara",
+    "priority": "Critical",
+    "execution": "UE+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-29",
+    "title": "Critical Sim Cache và live VFX",
+    "priority": "Critical",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-30",
+    "title": "Proxy không được coi final picture",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-31",
+    "title": "Script 1–2 phút tạo draft manifest",
+    "priority": "High",
+    "execution": "AUTO+LIVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-32",
+    "title": "Malformed planner response",
+    "priority": "High",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-33",
+    "title": "AI bịa asset và tự cấp approval",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-34",
+    "title": "Prompt injection trong screenplay",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-35",
+    "title": "Regenerate plan bảo vệ đã chốt",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-36",
+    "title": "Planning/cloud budget gate",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-37",
+    "title": "Route thực thi theo approved route",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-38",
+    "title": "Reference package đúng continuity",
+    "priority": "High",
+    "execution": "AUTO+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-39",
+    "title": "Draft review trước final video",
+    "priority": "Critical",
+    "execution": "AUTO+LIVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-40",
+    "title": "Model không hỗ trợ preset/control",
+    "priority": "High",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-41",
+    "title": "Hybrid identity/camera/timing drift",
+    "priority": "Critical",
+    "execution": "MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-42",
+    "title": "Timeout video không gửi trùng phí",
+    "priority": "Critical",
+    "execution": "AUTO+LIVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-43",
+    "title": "Foley chạy đúng Picture Lock",
+    "priority": "Critical",
+    "execution": "AUTO+GPU",
+    "mandatory": true
+  },
+  {
+    "id": "TC-44",
+    "title": "Stem riêng và dialogue canon",
+    "priority": "High",
+    "execution": "AUTO+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-45",
+    "title": "Picture sửa làm Foley/master stale",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-46",
+    "title": "Resolve import đúng media/timing",
+    "priority": "High",
+    "execution": "RESOLVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-47",
+    "title": "Di chuyển package sang folder khác",
+    "priority": "High",
+    "execution": "RESOLVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-48",
+    "title": "QC output master và missing media",
+    "priority": "High",
+    "execution": "RESOLVE+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-49",
+    "title": "Backend restart khi job running",
+    "priority": "High",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-50",
+    "title": "UE crash sau write trước ACK",
+    "priority": "Critical",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-51",
+    "title": "Exit success nhưng output thiếu",
+    "priority": "Critical",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-52",
+    "title": "Render partial hoặc ổ đĩa đầy",
+    "priority": "High",
+    "execution": "UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-53",
+    "title": "Duplicate/out-of-order provider events",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-54",
+    "title": "Cancel job và unlock tài nguyên",
+    "priority": "High",
+    "execution": "AUTO+UE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-55",
+    "title": "Pilot D1 đủ ba route, chạy 3 lần",
+    "priority": "Critical",
+    "execution": "E2E+MANUAL",
+    "mandatory": true
+  },
+  {
+    "id": "TC-56",
+    "title": "GPU/RAM scheduling và benchmark",
+    "priority": "High",
+    "execution": "GPU",
+    "mandatory": true
+  },
+  {
+    "id": "TC-57",
+    "title": "Backup/restore studio project",
+    "priority": "Critical",
+    "execution": "UE+RESOLVE",
+    "mandatory": true
+  },
+  {
+    "id": "TC-58",
+    "title": "Quality và scale thử nghiệm",
+    "priority": "High",
+    "execution": "MANUAL+E2E",
+    "mandatory": true
+  },
+  {
+    "id": "TC-59",
+    "title": "Secrets và local session access",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  },
+  {
+    "id": "TC-60",
+    "title": "Project isolation và file path",
+    "priority": "Critical",
+    "execution": "AUTO",
+    "mandatory": true
+  }
+]

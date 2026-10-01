@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ai-animation-studio.invalid/schemas/shot-manifest-v1.schema.json",
+  "title": "AI Animation Studio draft shot manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "shot_id", "fps", "timeline", "route", "environment_id", "performances"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "shot_id": {"type": "string", "minLength": 1},
+    "fps": {"type": "object", "additionalProperties": false, "required": ["num", "den"], "properties": {"num": {"type": "integer", "minimum": 1}, "den": {"type": "integer", "minimum": 1}}},
+    "timeline": {"type": "object", "additionalProperties": false, "required": ["in", "out_exclusive"], "properties": {"in": {"type": "integer", "minimum": 0}, "out_exclusive": {"type": "integer", "minimum": 1}}},
+    "route": {"type": "object", "additionalProperties": false, "required": ["suggested"], "properties": {"suggested": {"enum": ["UNREAL", "SEEDANCE", "HYBRID"]}}},
+    "environment_id": {"type": "string", "minLength": 1},
+    "performances": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["character_id", "anchor_id", "animation_id"], "properties": {"performance_id": {"type": "string", "minLength": 1}, "character_id": {"type": "string", "minLength": 1}, "anchor_id": {"type": "string", "minLength": 1}, "animation_id": {"type": "string", "minLength": 1}, "retarget_profile_id": {"type": "string", "minLength": 1}, "paired_asset_id": {"type": "string", "minLength": 1}, "dialogue_id": {"type": "string", "minLength": 1}, "voice_profile_id": {"type": "string", "minLength": 1}, "dialogue_start_local_frame": {"type": "integer", "minimum": 0}}}},
+    "intentional_overlap_with": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "camera_intent": {"type": "object", "additionalProperties": false, "properties": {"mode": {"enum": ["static_dialogue", "follow_walking", "two_shot"]}, "shot_size": {"type": "string"}, "subject": {"type": "string"}, "secondary_subject": {"type": "string"}}},
+    "render_profile_id": {"type": "string", "minLength": 1}
+  },
+  "$comment": "Timing inequalities, registry IDs, compatibility and approvals are checked by the backend. Approval, paths, bone maps and transforms are never accepted from drafts."
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Voice provider request P3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "shot_id", "shot_revision", "performance_id", "character_id", "dialogue_id", "dialogue_version_id", "dialogue_text", "voice_profile_id", "voice_profile_version_id", "provider_kind", "sample_rate", "fixture_duration_ms", "operation_id"],
+  "properties": {
+    "schema_version": {"const": "p3.voice-request.1"},
+    "shot_id": {"type": "string"}, "shot_revision": {"type": "integer", "minimum": 1},
+    "performance_id": {"type": "string"}, "character_id": {"type": "string"},
+    "dialogue_id": {"type": "string"}, "dialogue_version_id": {"type": "string"},
+    "dialogue_text": {"type": "string", "minLength": 1},
+    "voice_profile_id": {"type": "string"}, "voice_profile_version_id": {"type": "string"},
+    "provider_kind": {"const": "LOCAL_VOICE_FIXTURE"},
+    "sample_rate": {"type": "integer", "minimum": 8000, "maximum": 48000},
+    "fixture_duration_ms": {"type": "integer", "minimum": 50, "maximum": 60000},
+    "operation_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}
