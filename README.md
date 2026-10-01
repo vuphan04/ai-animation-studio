@@ -111,7 +111,21 @@ Bản hiện tại còn lỗi đã tái hiện liên quan tính hiện hành c�
 
 Máy phát triển đã sử dụng Windows 11, Python 3.14 và Node.js 24. Những phiên bản khác chưa được xác nhận trong môi trường này. Unreal không cần thiết để mở UI và sử dụng các luồng local; các bước UE cần bản cài đầy đủ, project cùng asset tương thích.
 
-Repository lưu mã nguồn và dependency lockfiles. Không kèm môi trường Python, node_modules, UI đã build, database, media, test project hoặc báo cáo kiểm thử. Chưa có installer `.exe` tự động; bước dựng source lần đầu dưới đây dành cho người thiết lập/phát triển.
+Repository lưu mã nguồn và dependency lockfiles. Không kèm môi trường Python, node_modules, UI đã build, database, media, test project hoặc báo cáo kiểm thử. Chưa có installer `.exe` tự động.
+
+### Mở ứng dụng bằng một file
+
+1. Tải toàn bộ repository bằng **Code → Download ZIP** hoặc clone, rồi giải nén.
+2. Cài sẵn **Python 3.14** (có Python Launcher `py`) và **Node.js 24** trên máy.
+3. Nhấp đúp **[Start-Studio.cmd](Start-Studio.cmd)** ngay ở thư mục gốc.
+4. Lần đầu, file tự tạo `.venv`, cài thư viện backend và build giao diện; cần Internet để tải dependency.
+5. Khi sẵn sàng, trình duyệt mở `http://127.0.0.1:8000/`. Giữ cửa sổ launcher mở trong lúc dùng.
+
+Không cần gõ lệnh để khởi chạy. File launcher cần đi cùng toàn bộ mã nguồn; tải riêng một file `.cmd` không đủ để chạy app. Nó không tự cài Python, Node.js hoặc Unreal Engine. Nếu một bước thất bại, cửa sổ giữ thông báo lỗi để đọc; sau khi khắc phục có thể mở lại file.
+
+### Dựng source thủ công dành cho người phát triển
+
+Bước dưới đây là lựa chọn thay thế launcher khi cần chẩn đoán hoặc phát triển:
 
 Trong PowerShell ở thư mục repository:
 
@@ -125,7 +139,7 @@ npm run build --prefix apps/web
 Sau khi dựng xong:
 
 1. Mở `tools\Create-Studio-Shortcut.cmd` để tạo shortcut ở vị trí hiện tại.
-2. Nhấp đúp **Start-Studio.lnk**, hoặc mở trực tiếp `tools\Start-Studio.cmd`.
+2. Nhấp đúp **Start-Studio.lnk**, **Start-Studio.cmd** ở thư mục gốc hoặc mở trực tiếp `tools\Start-Studio.cmd` khi dependency/UI đã được dựng.
 3. Launcher mở ứng dụng tại `http://127.0.0.1:8000/` trong trình duyệt mặc định.
 4. Giữ cửa sổ launcher mở trong lúc dùng; đóng cửa sổ đó để dừng server.
 
