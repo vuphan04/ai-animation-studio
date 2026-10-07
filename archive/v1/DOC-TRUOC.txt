@@ -1,0 +1,27 @@
+LƯU TRỮ WORKFLOW CŨ (V1) — AI Animation Studio
+Ngày lưu: 05/10/2026 · bản cuối còn chạy V1: 2026.10.05.1
+
+Thư mục này giữ lại mã nguồn, test, công cụ và tài liệu của workflow V1 (các phase P0–P7).
+Ứng dụng KHÔNG nạp bất cứ thứ gì trong thư mục này. Xóa thư mục này không ảnh hưởng tới app đang chạy.
+
+Bên trong có gì
+  services/           Backend V1: adapters, p2–p7, planner, voice/video/Foley adapter, media_settings, seed, acceptance-catalog.
+  apps/               Màn hình V1: PlannerPage, CachePage, MediaPage, MediaSettingsPanel, AcceptancePage.
+  tools/              editor_agent.py (script Unreal của V1), các công cụ smoke/check/qa, tools/spikes.
+  tests/              test_p1 … test_p7 và fixtures.
+  schemas/            JSON schema của manifest, planner, Unreal, voice V1.
+  docs/               Báo cáo và runbook P0–P7, capability-profile.json, evidence, hai tài liệu thiết kế V1.
+  samples/            Project Unreal mẫu của P0.
+  mixed-before-cut/   Bản sao nguyên trạng của các file dùng chung (api.py, service.py, App.tsx, README.md…)
+                      ngay trước khi cắt phần V1. Ghép các file này với các thư mục trên là có lại bản 2026.10.05.1.
+
+Dữ liệu của dự án cũ
+  Các bảng V1 vẫn nằm trong cơ sở dữ liệu của app (migration 001–019 là lịch sử); không màn hình nào còn đọc chúng.
+  Lần khởi động đầu tiên sau bản 2026.10.05.2, app tự chép cơ sở dữ liệu sang
+  data/archive/studio-before-029_single_workflow.sqlite3 rồi mới chuyển các dự án cũ sang workflow hiện tại.
+  File media của dự án cũ vẫn ở nguyên trong thư mục dự án (data/projects/<id>/).
+
+Muốn xem lại V1
+  Ghép lại bản 2026.10.05.1 vào một thư mục riêng (như mô tả ở mixed-before-cut), chép file
+  studio-before-029_single_workflow.sqlite3 thành data/studio.sqlite3 trong thư mục đó rồi chạy ở đó.
+  Việc ghép lại này chưa được chạy thử. Không chạy mã V1 trên thư mục data của bản hiện tại.

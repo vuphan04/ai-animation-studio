@@ -26,7 +26,7 @@ def fingerprint(files: list[Path], base: Path) -> str:
 def source_files(web: Path) -> list[Path]:
     files = [web / name for name in ("index.html", "package.json", "package-lock.json", "vite.config.ts")]
     files.extend(web.glob("tsconfig*.json"))
-    for directory in ("src", "public"):
+    for directory in ("src", "public", "scripts"):
         files.extend(path for path in (web / directory).rglob("*") if path.is_file())
     # The UI imports the shared, public build identifier.
     files.append(web.parents[1] / "resources" / "app-build.json")

@@ -44,17 +44,18 @@ test_*.py
 .pytest_cache/
 .coverage*
 htmlcov/
-tools/spikes/
-tools/qa_*
-tools/smoke_*
-tools/check_phase*
-tools/verify_phase*
-tools/p7_restart_child.py
-services/api/studio/seed.py
+# The same kinds of file inside the archived V1 workflow
+archive/v1/tools/spikes/
+archive/v1/tools/qa_*
+archive/v1/tools/smoke_*
+archive/v1/tools/check_phase*
+archive/v1/tools/verify_phase*
+archive/v1/tools/p7_restart_child.py
+archive/v1/services/api/studio/seed.py
+archive/v1/docs/
 
-# The application needs the capability profile at runtime; reports stay local.
+# Reports stay local.
 docs/*
-!docs/capability-profile.json
 
 # User requested: README is the only Markdown file in the repository
 *.[mM][dD]

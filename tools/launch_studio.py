@@ -23,7 +23,10 @@ def running_studio() -> dict | None:
     try:
         with urllib.request.urlopen(HEALTH, timeout=1) as response:
             data = json.loads(response.read())
-            return data if response.status == 200 and isinstance(data, dict) and data.get("adapter_kind") == "FAKE_CONTROL_FLOW" else None
+            # Builds before 2026.10.05.2 identified themselves with the adapter name; they are still recognised so the
+            # launcher can say "an older version is running" instead of "the port is taken by another program".
+            ours = isinstance(data, dict) and (data.get("app") == "ai-animation-studio" or data.get("adapter_kind") == "FAKE_CONTROL_FLOW")
+            return data if response.status == 200 and ours else None
     except (OSError, ValueError, urllib.error.URLError):
         return None
 

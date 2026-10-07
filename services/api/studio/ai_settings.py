@@ -9,12 +9,13 @@ from .model_catalog import MODEL_CATALOG, public_models
 
 
 MODELS = set(MODEL_CATALOG)
-PROVIDERS = {"LOCAL_PLANNER_FIXTURE", "OPENAI"}
+PROVIDERS = {"LOCAL_PLANNER_FIXTURE", "OPENAI", "CLAUDE_CODE"}
 
 
 class AISettings:
-    def __init__(self, studio):
+    def __init__(self, studio, claude_code=None):
         self.db = studio.db
+        self.claude_code = claude_code
 
     def _key_configured(self) -> bool:
         try:
@@ -26,7 +27,11 @@ class AISettings:
         with self.db.connect() as conn:
             value = dict(conn.execute("SELECT revision,provider_kind,model,max_output_tokens,updated_at FROM ai_settings WHERE id=1").fetchone())
         value["key_configured"] = self._key_configured()
-        value["configured"] = value["provider_kind"] == "LOCAL_PLANNER_FIXTURE" or value["key_configured"]
+        if value["provider_kind"] == "CLAUDE_CODE":
+            # Found on this machine; whether it is signed in and answers is shown by its own panel.
+            value["configured"] = bool(self.claude_code and self.claude_code.available())
+        else:
+            value["configured"] = value["provider_kind"] == "LOCAL_PLANNER_FIXTURE" or value["key_configured"]
         value["available_models"] = public_models()
         return value
 

@@ -14,6 +14,11 @@ class ClosingConnection(sqlite3.Connection):
             self.close()
 
 
+# Migrations that change what existing projects mean: when the query finds such projects, the database is copied
+# to data/archive/ as it was, before the migration runs.
+SNAPSHOT_BEFORE = {"029_single_workflow": "SELECT 1 FROM projects WHERE workflow_version='V1' LIMIT 1"}
+
+
 class Database:
     def __init__(self, data_root: Path):
         self.data_root = data_root.resolve()
@@ -34,6 +39,8 @@ class Database:
             for path in sorted((Path(__file__).resolve().parents[1] / "migrations").glob("*.sql")):
                 if db.execute("SELECT 1 FROM schema_migrations WHERE version=?", (path.stem,)).fetchone():
                     continue
+                if path.stem in SNAPSHOT_BEFORE and db.execute(SNAPSHOT_BEFORE[path.stem]).fetchone():
+                    self._snapshot(db, path.stem)
                 db.executescript(path.read_text(encoding="utf-8"))
                 db.execute("INSERT INTO schema_migrations(version) VALUES(?)", (path.stem,))
             if not db.execute("SELECT 1 FROM schema_migrations WHERE version='002_registry_pins'").fetchone():
@@ -63,6 +70,14 @@ class Database:
                     AND (SELECT COUNT(*) FROM artifact_versions x WHERE x.project_id=a.project_id AND x.shot_id=a.shot_id AND x.role=a.role AND x.input_hash=a.input_hash)=1
                 """)
                 db.execute("INSERT INTO schema_migrations(version) VALUES('004_legacy_job_links')")
+
+    def _snapshot(self, db: sqlite3.Connection, migration: str) -> None:
+        target = self.data_root / "archive" / f"studio-before-{migration}.sqlite3"
+        if target.exists():
+            return
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(target, factory=ClosingConnection) as copy:
+            db.backup(copy)
 
     @contextmanager
     def transaction(self):
