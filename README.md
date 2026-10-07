@@ -137,7 +137,7 @@ Bạn có thể mở app và thử các bước đầu ngay, chưa cần Unreal 
 
 1. **Tạo dự án và tập.** Ở tab **Tổng quan**, nhập tên rồi bấm **Tạo dự án**, sau đó **Thêm tập**. Dự án và tập đang làm luôn hiện ở thanh trên cùng.
 2. **Đặt chuẩn và ngân sách (S1).** Vào tab **Thư viện series**, bước **S1**: lưu FPS, độ phân giải và đặt **trần chi phí tháng**. Chưa đặt trần thì app không gửi yêu cầu có phí nào.
-3. **Liệt kê nhân vật và bối cảnh (S2).** Dán kịch bản, bấm **Lưu kịch bản** rồi **Liệt kê nhân vật & bối cảnh**. Mặc định app dùng chế độ mô phỏng, hiểu kịch bản viết theo dạng dưới đây:
+3. **Liệt kê nhân vật và bối cảnh (S2).** Dán kịch bản, bấm **Lưu kịch bản**, rồi **Xem chi phí liệt kê**, rồi **Liệt kê nhân vật & bối cảnh** (nút này chỉ bật sau khi bạn đã xem chi phí). Mặc định app dùng chế độ mô phỏng, không tốn phí, hiểu kịch bản viết theo dạng dưới đây:
 
    ```text
    CẢNH 1: Boong tàu - ĐÊM
@@ -153,7 +153,7 @@ Bạn có thể mở app và thử các bước đầu ngay, chưa cần Unreal 
    Muốn AI thật đọc kịch bản thì chọn OpenAI hoặc Claude Code ở **Cài đặt → Dịch vụ AI & giọng thoại**.
 4. **Kết nối Unreal (từ S3 trở đi).** Vào **Cài đặt → Kết nối Unreal**, chọn `UnrealEditor-Cmd.exe` và file `.uproject`, rồi quay lại **S3** để quét asset. Ở **CS1**, chọn asset cho từng nhân vật, bối cảnh và duyệt.
 5. **Style bible (S4, CS2).** Viết mô tả hình ảnh, thêm ảnh tham chiếu, gán giọng rồi duyệt.
-6. **Tập phim (Khu A).** Phân tích kịch bản thành scene và shot, duyệt từng scene (C1), duyệt phần bổ sung thư viện (C2), chốt cách làm từng shot và chi phí (C3), tạo thoại và duyệt timing (C4).
+6. **Tập phim (Khu A).** Bấm **Xem chi phí phân tích** rồi phân tích kịch bản thành scene và shot, duyệt từng scene (C1), duyệt phần bổ sung thư viện (C2), chốt cách làm từng shot và chi phí (C3), tạo thoại và duyệt timing (C4).
 7. **Dựng shot (Khu B).** Dựng nhánh UE và tạo draft AI, chốt từng shot (C5, C6), ghép rough cut và khóa dựng (C7).
 8. **Final và xuất phim (Khu C).** Tạo và duyệt final (C8), làm âm thanh (C9), tạo gói bàn giao, import vào DaVinci Resolve và xác nhận đã xuất phim (C10).
 
