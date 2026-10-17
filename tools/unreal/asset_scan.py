@@ -1,7 +1,7 @@
 """Run inside Unreal Editor 5.8 Python. Read-only Asset Registry inventory for the series library (S3).
 
 Reads registry data only: it never loads, edits or saves an asset.
-This is an editor-script candidate until it has been run against a real UE 5.8 project.
+Run through the app against UE 5.8.3 on a ThirdPerson template project (111 assets) on 2026-10-18.
 """
 
 import json

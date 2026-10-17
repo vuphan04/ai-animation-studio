@@ -864,7 +864,7 @@ MESSAGES = {
     "Tệp .uproject không hợp lệ: Plugins phải là một danh sách.": "Invalid .uproject file: Plugins must be a list.",
     "Tệp .uproject không hợp lệ: mỗi plugin phải có Name là tên không rỗng.": "Invalid .uproject file: every plugin needs a non-empty Name.",
     "Tệp .uproject không hợp lệ: plugin {0} bị trùng hoặc Enabled không phải true/false.": "Invalid .uproject file: plugin {0} is duplicated or its Enabled is not true/false.",
-    "Project chưa bật plugin bắt buộc: {0}. Mở project trong Unreal → Edit → Plugins, bật các plugin này, lưu project rồi thử lại.": "The project has not enabled the required plugins: {0}. Open the project in Unreal → Edit → Plugins, enable them, save the project and try again.",
+    "Project chưa bật plugin bắt buộc: {0}. Mở project trong Unreal → Edit → Plugins, bật các plugin này, lưu project rồi thử lại. Tệp .uproject đã kiểm tra: {1}": "The project has not enabled the required plugins: {0}. Open the project in Unreal → Edit → Plugins, enable them, save the project and try again. .uproject file checked: {1}",
     "Unreal không trả kết quả {0}; exit={1}. Kiểm tra project mở được trong Unreal 5.8.": "Unreal returned no {0} result; exit={1}. Check that the project opens in Unreal 5.8.",
     "Unreal chặn thao tác {0}: {1}": "Unreal refused the {0} operation: {1}",
     "không rõ": "unknown",
