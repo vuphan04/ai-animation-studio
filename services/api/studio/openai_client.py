@@ -22,6 +22,16 @@ class PlannerNotSent(DomainError):
     """A preflight failure before any paid HTTP request was made."""
 
 
+class PlannerAnswered(DomainError):
+    """The provider ran the request and reported its usage, but the answer cannot be used (refused, cut off…)."""
+
+    def __init__(self, message: str, actual_micro: int, request_id: str = "", model: str | None = None):
+        super().__init__(message, 409)
+        self.actual_micro = actual_micro
+        self.request_id = request_id
+        self.model = model
+
+
 def obj(properties: dict) -> dict:
     return {"type": "object", "properties": properties, "required": list(properties), "additionalProperties": False}
 

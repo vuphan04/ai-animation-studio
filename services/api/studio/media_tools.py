@@ -13,6 +13,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from . import logs
 from .domain import DomainError
 from .tool_settings import ToolSettings
 
@@ -41,6 +42,9 @@ def master_color(color_space: str) -> tuple[str, list[str]]:
             ["-color_primaries", primaries, "-color_trc", transfer, "-colorspace", matrix, "-color_range", "tv", "-movflags", "+write_colr"])
 
 
+ffmpeg_log = logs.get("ffmpeg")
+
+
 class MediaTools:
     def __init__(self, studio, paths=None):
         self.studio = studio
@@ -64,11 +68,14 @@ class MediaTools:
 
     def _run(self, tool: str, args: list[str], label: str, timeout: int = 3600, log: bool = False) -> str:
         """Standard output of the tool; with `log`, what it reported on standard error (where filters print their findings)."""
+        ffmpeg_log.debug("%s %s", tool, " ".join(args))
         try:
             done = subprocess.run([self.paths()[tool], *args], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout, check=False)
         except (OSError, subprocess.SubprocessError) as exc:
+            ffmpeg_log.error("%s could not run: %s: %s", tool, type(exc).__name__, exc)
             raise DomainError(f"Không chạy được FFmpeg khi {label}: {type(exc).__name__}.", 409) from exc
         if done.returncode != 0:
+            ffmpeg_log.error("%s exited %d: %s\n%s", tool, done.returncode, " ".join(args), logs.tail(done.stderr))
             lines = [line for line in (done.stderr or "").strip().splitlines() if line.strip()]
             raise DomainError(f"FFmpeg lỗi khi {label}: {lines[-1][:240] if lines else 'không có thông báo'}", 409)
         return done.stderr if log else done.stdout

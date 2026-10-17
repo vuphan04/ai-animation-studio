@@ -13,14 +13,14 @@ import uuid
 from pathlib import Path
 
 from . import budget, workflow
-from .ai_settings import AISettings
+from .ai_settings import AISettings, KEY_MISSING, key_available
 from .breakdown_domain import (SCHEMA, apply_scene_edit, assign_keys, clean_draft, clean_scene, entity_index, merge_draft,
                                scene_hash, scene_review, tag_usage, usage)
-from .breakdown_provider import BreakdownTruncated, ClaudeCodeBreakdown, FixtureBreakdown, OpenAIBreakdown
+from .breakdown_provider import ClaudeCodeBreakdown, FixtureBreakdown, OpenAIBreakdown
+from .claude_api import ClaudeAPIBreakdown, request_fields as claude_api_fields
 from .claude_code import MISSING as CLAUDE_CODE_MISSING, ClaudeCodeSettings
 from .domain import DomainError, canonical, digest, UE_TARGET_VERSION
-from .openai_client import PlannerNotSent, PlannerRemoteError
-from .secrets import get_provider_key
+from .openai_client import PlannerAnswered, PlannerNotSent, PlannerRemoteError
 from .service import now, require, uid
 
 
@@ -33,10 +33,10 @@ class BreakdownService:
         self.custom_provider = provider
         self.claude_code = claude_code or ClaudeCodeSettings(studio)
         self.ai_settings = AISettings(studio, self.claude_code)
-        self.secret_available = secret_available or (lambda: bool(get_provider_key("OPENAI")))
+        self.secret_available = secret_available or key_available
         with self.db.transaction() as conn:
             # A paid request interrupted by a restart has an unknown outcome and is never resent.
-            conn.execute("UPDATE breakdown_jobs SET state=CASE WHEN provider_kind='OPENAI' THEN 'RECONCILING' ELSE 'BLOCKED' END,error='Backend khởi động lại trong lúc phân tích.',updated_at=? WHERE state='RUNNING'", (now(),))
+            conn.execute("UPDATE breakdown_jobs SET state=CASE WHEN provider_kind IN ('OPENAI','CLAUDE_API') THEN 'RECONCILING' ELSE 'BLOCKED' END,error='Backend khởi động lại trong lúc phân tích.',updated_at=? WHERE state='RUNNING'", (now(),))
 
     # ---- shared lookups ------------------------------------------------------------------------------------------
 
@@ -123,6 +123,8 @@ class BreakdownService:
             return self.custom_provider
         if settings["provider_kind"] == "CLAUDE_CODE":
             return ClaudeCodeBreakdown(self.claude_code)
+        if settings["provider_kind"] == "CLAUDE_API":
+            return ClaudeAPIBreakdown()
         return OpenAIBreakdown() if settings["provider_kind"] == "OPENAI" else FixtureBreakdown()
 
     def _request(self, conn, episode_id: str, screenplay_id: str) -> tuple[dict, object, dict]:
@@ -144,6 +146,8 @@ class BreakdownService:
         elif provider.kind == "CLAUDE_CODE":
             chosen = self.claude_code.get()
             request.update({"provider_model": chosen["model"], "settings_revision": chosen["revision"]})
+        elif provider.kind == "CLAUDE_API":
+            request.update(claude_api_fields(settings))
         request["input_hash"] = digest(request)
         return request, provider, episode
 
@@ -176,8 +180,8 @@ class BreakdownService:
             if provider.kind == "CLAUDE_CODE" and not self.claude_code.available():
                 raise DomainError(CLAUDE_CODE_MISSING, 409)
             if provider.paid:
-                if not self.secret_available():
-                    raise DomainError("Chưa có khóa OpenAI trong kho bảo mật; vào Cài đặt để nhập khóa.", 409)
+                if not self.secret_available(provider.kind):
+                    raise DomainError(KEY_MISSING.get(provider.kind, KEY_MISSING["OPENAI"]), 409)
                 budget.reserve(conn, episode["project_id"], operation_id, gate=0, category="PLANNING",
                                provider_kind=provider.kind, currency="USD", amount_micro=estimate)
             stamp = now()
@@ -221,8 +225,9 @@ class BreakdownService:
             request["operation_id"] = job["operation_id"]
             sent = provider.paid
             result = provider.generate(request)
-        except BreakdownTruncated as exc:
-            return self._finish(job, "BLOCKED", str(exc), actual=min(exc.actual_micro, job["estimated_micro"]), request_id=exc.request_id)
+        except PlannerAnswered as exc:
+            # The provider ran the request and reported its usage; only the answer is unusable.
+            return self._finish(job, "BLOCKED", str(exc)[:500], actual=exc.actual_micro, request_id=exc.request_id or None, model=exc.model)
         except Exception as exc:
             not_sent = isinstance(exc, PlannerNotSent) or not sent
             return self._finish(job, "BLOCKED" if not_sent else "RECONCILING", str(exc)[:500],

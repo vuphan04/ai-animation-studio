@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import logs
 from .db import Database
 from .domain import DomainError, canonical
 
@@ -27,6 +29,10 @@ def require(row, label: str = "resource") -> dict:
     if row is None:
         raise DomainError(f"{label} not found", 404)
     return dict(row)
+
+
+# Audit outcomes that mean a job stopped without doing its work.
+TROUBLE = {"blocked", "reconciling", "failed", "partial", "error", "interrupted", "expired"}
 
 
 def redacted(value):
@@ -107,7 +113,11 @@ class Studio:
         return self.unreal_settings()
 
     def audit(self, conn, project_id: str | None, event: str, entity: str, detail: dict) -> None:
-        conn.execute("INSERT INTO audit(project_id,event_type,entity_id,detail_json,created_at) VALUES(?,?,?,?,?)", (project_id, event, entity, canonical(redacted(detail)), now()))
+        text = canonical(redacted(detail))
+        conn.execute("INSERT INTO audit(project_id,event_type,entity_id,detail_json,created_at) VALUES(?,?,?,?,?)", (project_id, event, entity, text, now()))
+        # Every recorded action also lands in the log, under the area that recorded it (series, breakdown, budget…).
+        outcome = event.rsplit(".", 1)[-1].rsplit("_", 1)[-1]
+        logs.get(event.split(".", 1)[0]).log(logging.WARNING if outcome in TROUBLE else logging.INFO, "%s %s %s", event, entity, text[:400])
 
     def project(self, project_id: str) -> dict:
         with self.db.connect() as conn:

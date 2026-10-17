@@ -10,9 +10,10 @@ import httpx
 
 from .breakdown_domain import CONTENT_FLAGS, SHOT_SIZES, fixture_draft
 from .claude_code import NOTE as CLAUDE_CODE_NOTE
+from . import logs
 from .domain import DomainError, canonical, digest
 from .model_catalog import MODEL_CATALOG
-from .openai_client import PlannerNotSent, PlannerRemoteError, obj, STRING
+from .openai_client import PlannerAnswered, PlannerNotSent, PlannerRemoteError, obj, STRING
 from .secrets import get_provider_key
 
 
@@ -35,6 +36,8 @@ INSTRUCTIONS = (
     "duration_seconds is the expected screen time. Set face_visible when a character's face is readable in frame and add "
     "content_flags for violence or blood. Do not invent asset paths, routes, approvals or commands.")
 
+openai_log = logs.get("openai")
+
 
 @dataclass(frozen=True)
 class BreakdownResult:
@@ -44,13 +47,12 @@ class BreakdownResult:
     resolved_model: str | None = None
 
 
-class BreakdownTruncated(DomainError):
+class BreakdownTruncated(PlannerAnswered):
     """The provider answered and charged, but the output hit the token cap and is not usable."""
 
-    def __init__(self, actual_micro: int, request_id: str):
-        super().__init__("Kết quả phân tích bị cắt vì vượt giới hạn token đầu ra. Tăng giới hạn trong Cài đặt → Dịch vụ AI hoặc lưu kịch bản thành từng phần rồi phân tích lần lượt.", 409)
-        self.actual_micro = actual_micro
-        self.request_id = request_id
+    def __init__(self, actual_micro: int, request_id: str, model: str | None = None):
+        super().__init__("Kết quả phân tích bị cắt vì vượt giới hạn token đầu ra. Tăng giới hạn trong Cài đặt → Dịch vụ AI hoặc lưu kịch bản thành từng phần rồi phân tích lần lượt.",
+                         actual_micro, request_id, model)
 
 
 class FixtureBreakdown:
@@ -135,8 +137,10 @@ class OpenAIBreakdown:
                 response = client.post("https://api.openai.com/v1/responses", json=payload,
                                        headers={"Authorization": f"Bearer {key}", "X-Client-Request-Id": request["operation_id"]})
         except httpx.HTTPError as exc:
+            openai_log.error("Request to OpenAI %s: connection failed (%s); outcome unknown", model, type(exc).__name__)
             raise DomainError("Kết quả OpenAI chưa rõ sau lỗi mạng; cần đối soát, không tự gửi lại.", 409) from exc
         request_id = response.headers.get("x-request-id", "")
+        openai_log.info("OpenAI %s answered HTTP %d, request %s", model, response.status_code, request_id or "-")
         if response.status_code != 200:
             raise PlannerRemoteError(f"OpenAI trả HTTP {response.status_code}; request ID: {request_id or 'không có'}. Không tự gửi lại.", request_id)
         try:
@@ -151,6 +155,7 @@ class OpenAIBreakdown:
                           for part in output.get("content", []) if part.get("type") == "output_text")
             if not raw or not request_id or not isinstance(value["model"], str):
                 raise ValueError("missing output, model or request id")
+            openai_log.info("OpenAI %s: %d input / %d output tokens, cost $%.4f", value["model"], usage["input_tokens"], usage["output_tokens"], cost / 1e6)
             return BreakdownResult(raw, request_id, cost, value["model"])
         except BreakdownTruncated:
             raise

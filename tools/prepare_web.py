@@ -68,7 +68,7 @@ def prepare_web(root: Path) -> str:
 
     npm = shutil.which("npm.cmd" if sys.platform == "win32" else "npm")
     if not npm:
-        raise PreparationError("Cần Node.js 24 để cập nhật giao diện. Cài từ https://nodejs.org/ rồi mở lại Start-Studio.cmd.")
+        raise PreparationError("Cần Node.js 24 để cập nhật giao diện. Cài từ https://nodejs.org/ rồi mở lại Start-Studio.")
     dependency_hash = fingerprint([web / "package.json", web / "package-lock.json"], root)
     dependency_marker = web / "node_modules" / ".studio-dependencies.json"
     if read_marker(dependency_marker).get("dependencies_sha256") != dependency_hash or not (web / "node_modules" / "vite" / "package.json").is_file():

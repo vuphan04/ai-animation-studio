@@ -4,7 +4,7 @@
 
 ![Màn hình Tổng quan: dự án, các tập và bản đồ workflow](assets/screenshots/tong-quan.png)
 
-> **Trạng thái:** mã nguồn đang phát triển. Phần điều phối, giao diện, xử lý video bằng FFmpeg và phân tích kịch bản qua Claude Code đã chạy thật trên máy phát triển. Các script Unreal, kết nối OpenAI, ElevenLabs, Seedance, MiniMax, HunyuanVideo-Foley và việc import vào DaVinci Resolve chưa được chạy trên hệ thống thật. [Mục 8](#8-trạng-thái-triển-khai-thực-tế) ghi rõ từng phần.
+> **Trạng thái:** mã nguồn đang phát triển. Phần điều phối, giao diện, xử lý video bằng FFmpeg và phân tích kịch bản qua Claude Code đã chạy thật trên máy phát triển. Các script Unreal, kết nối OpenAI, Claude API, ElevenLabs, Seedance, MiniMax, HunyuanVideo-Foley và việc import vào DaVinci Resolve chưa được chạy trên hệ thống thật. [Mục 8](#8-trạng-thái-triển-khai-thực-tế) ghi rõ từng phần.
 
 ## Mục lục
 
@@ -39,7 +39,7 @@ Mọi việc đi theo **một workflow gồm 4 khu và 12 checkpoint**. Mỗi ch
 - **Ba cách làm một shot.** Dựng hoàn toàn trong Unreal (UE), tạo video trực tiếp bằng AI, hoặc Hybrid (nguồn từ Unreal, AI xử lý tiếp). App đề xuất theo quy tắc cố định; bạn quyết định và khóa.
 - **Kiểm soát chi phí.** Trần chi phí tháng, sổ chi phí và ba cổng ngân sách chặn yêu cầu có phí trước khi gửi. Yêu cầu không rõ kết quả không bao giờ tự gửi lại.
 - **Phiên bản và duyệt.** Sửa đầu vào sau khi đã duyệt thì checkpoint báo "đã đổi sau khi duyệt"; chỉ phần bị ảnh hưởng phải làm lại, phần còn lại giữ nguyên.
-- **Phân tích kịch bản bằng AI.** Liệt kê nhân vật, bối cảnh và chia scene/shot bằng OpenAI API, bằng Claude qua Claude Code cài trên máy, hoặc bằng chế độ mô phỏng để thử luồng.
+- **Phân tích kịch bản bằng AI.** Liệt kê nhân vật, bối cảnh và chia scene/shot bằng OpenAI API, bằng Claude API (khóa API của Anthropic, chọn được model Claude), bằng Claude qua Claude Code cài trên máy, hoặc bằng chế độ mô phỏng để thử luồng.
 - **Thoại, video, âm thanh.** Thoại ElevenLabs với timing theo frame; video Seedance 2.5 và MiniMax H3; Foley bằng HunyuanVideo-Foley chạy trên máy; âm thanh xuất thành 5 stem.
 - **Gói bàn giao.** Timeline FCPXML, EDL dự phòng, phụ đề SRT tiếng Việt và tiếng Anh, MP4 xem thử và báo cáo QC tự động.
 - **Dễ vận hành.** Giao diện tiếng Việt và tiếng Anh, chế độ ban ngày và ban đêm, mọi cấu hình làm trong app; API key nằm trong Windows Credential Manager, không đi qua trang web.
@@ -71,7 +71,7 @@ Phạm vi hiện tại là **một máy Windows, một người vận hành**. C
 | Git | Để clone. Không có Git thì dùng **Code → Download ZIP** trên GitHub. |
 | Internet ở lần chạy đầu | Để tải thư viện Python và thư viện giao diện. |
 
-Những thứ sau **không bắt buộc để mở app**; mỗi thứ chỉ cần khi bạn làm tới bước dùng nó (xem bảng ở [mục 3](#3-hướng-dẫn-sử-dụng-nhanh)): Unreal Engine 5.8 và một project, FFmpeg có kèm ffprobe, tài khoản OpenAI, ElevenLabs, Seedance hoặc MiniMax, Claude Code, HunyuanVideo-Foley, DaVinci Resolve.
+Những thứ sau **không bắt buộc để mở app**; mỗi thứ chỉ cần khi bạn làm tới bước dùng nó (xem bảng ở [mục 3](#3-hướng-dẫn-sử-dụng-nhanh)): Unreal Engine 5.8 và một project, FFmpeg có kèm ffprobe, tài khoản OpenAI, khóa Claude API của Anthropic, ElevenLabs, Seedance hoặc MiniMax, Claude Code, HunyuanVideo-Foley, DaVinci Resolve.
 
 ### Các bước
 
@@ -81,17 +81,19 @@ Những thứ sau **không bắt buộc để mở app**; mỗi thứ chỉ cầ
    git clone https://github.com/vuphan04/ai-animation-studio.git
    ```
 
-2. Mở thư mục `ai-animation-studio` và nhấp đúp **[Start-Studio.cmd](Start-Studio.cmd)**.
-3. Lần đầu, file này tự tạo môi trường Python riêng trong thư mục `.venv`, cài thư viện và dựng giao diện. Việc này mất vài phút. Nếu máy chưa có Python 3.14 hoặc Node.js, cửa sổ sẽ hỏi có cài bằng winget không: bấm **C** để cài, cài xong thì đóng cửa sổ và mở lại `Start-Studio.cmd`.
-4. Khi xong, trình duyệt mở `http://127.0.0.1:8000/`. Giữ cửa sổ khởi chạy mở trong lúc dùng; đóng cửa sổ đó để dừng app.
+2. Lần đầu: mở thư mục `ai-animation-studio\tools` và nhấp đúp **[Start-Studio.cmd](tools/Start-Studio.cmd)**.
+3. File này tự tạo môi trường Python riêng trong thư mục `.venv`, cài thư viện và dựng giao diện. Việc này mất vài phút. Nếu máy chưa có Python 3.14 hoặc Node.js, cửa sổ sẽ hỏi có cài bằng winget không: bấm **C** để cài, cài xong thì đóng cửa sổ và mở lại `tools\Start-Studio.cmd`.
+4. Khi xong, cửa sổ console tự đóng và **cửa sổ launcher** mở ra (xem [Cửa sổ launcher và nhật ký](#cửa-sổ-launcher-và-nhật-ký-log)), rồi trình duyệt mở `http://127.0.0.1:8000/`. Giữ cửa sổ launcher mở trong lúc dùng; đóng nó để dừng app.
 
-Từ lần sau chỉ cần nhấp đúp `Start-Studio.cmd`. Dữ liệu của bạn nằm trong thư mục `data` cạnh mã nguồn; thư mục này không thuộc repository và không bị ghi đè khi cập nhật.
+Lần chạy đầu tạo shortcut **Start-Studio** có icon capybara ngay trong thư mục `ai-animation-studio`. Từ lần sau chỉ cần nhấp đúp shortcut đó; đây là lối mở app duy nhất ở thư mục gốc. Shortcut chứa đường dẫn tuyệt đối nên được tạo trên từng máy và không nằm trong repository; mỗi lần mở app, launcher tạo lại shortcut nếu nó bị xóa hoặc thư mục app đã được chuyển chỗ. Nếu shortcut báo không tìm thấy file (ví dụ vừa chuyển thư mục), mở `tools\Start-Studio.cmd` một lần để tạo lại. Dữ liệu của bạn nằm trong thư mục `data` cạnh mã nguồn; thư mục này không thuộc repository và không bị ghi đè khi cập nhật.
 
 ### Cập nhật
 
-1. Đóng cửa sổ khởi chạy đang mở.
+1. Đóng cửa sổ launcher đang mở.
 2. Trong thư mục app, chạy `git pull`. Nếu bạn tải bằng ZIP: tải ZIP mới và chép đè các file mã nguồn, giữ nguyên thư mục `data` và `.venv`.
-3. Nhấp đúp `Start-Studio.cmd`. File này tự dựng lại giao diện và cơ sở dữ liệu tự nâng cấp.
+3. Nhấp đúp shortcut **Start-Studio**. Launcher tự dựng lại giao diện và cơ sở dữ liệu tự nâng cấp.
+
+Từ bản 2026.10.17.2, file khởi chạy nằm ở `tools\Start-Studio.cmd` và thư mục gốc chỉ còn shortcut **Start-Studio**. Shortcut tạo từ bản cũ đã trỏ tới `tools\Start-Studio.cmd` nên vẫn dùng được. Nếu bạn cập nhật bằng ZIP, xóa file `Start-Studio.cmd` cũ còn sót ở thư mục gốc.
 
 Trong **Cài đặt → Kết nối Unreal** có dòng **Bản giao diện · Máy chủ**; hai số phải giống nhau. Nếu khác nhau, bạn đang mở một cửa sổ khởi chạy cũ: đóng nó rồi mở lại.
 
@@ -101,11 +103,27 @@ Từ bản 2026.10.05.2 app chỉ còn một workflow. Nếu thư mục `data` c
 
 | Cửa sổ khởi chạy báo | Cách xử lý |
 |---|---|
-| `Chưa có Python 3.14 trên máy này` | Bấm **C** để cài bằng winget, hoặc cài từ python.org, rồi mở lại `Start-Studio.cmd`. |
+| `Chưa có Python 3.14 trên máy này` | Bấm **C** để cài bằng winget, hoặc cài từ python.org, rồi mở lại Start-Studio. |
 | `Chưa có Node.js trên máy này` | Bấm **C** để cài bằng winget, hoặc cài từ nodejs.org, rồi mở lại. |
 | `Không cài được thư viện backend` | Kiểm tra kết nối Internet rồi mở lại. |
-| `Port 8000 is occupied by another application` | Một chương trình khác đang dùng cổng 8000; đóng chương trình đó. |
-| `Ứng dụng đang chạy bản cũ` | Đóng cửa sổ khởi chạy cũ rồi mở lại. |
+| Launcher báo `Cổng 8000 đang bị chương trình khác dùng` | Đóng chương trình đó rồi bấm **Khởi động** trong launcher. |
+| `Ứng dụng đang chạy bản cũ` | Đóng cửa sổ launcher (hoặc console) cũ rồi mở lại Start-Studio. |
+| Shortcut **Start-Studio** báo không tìm thấy file | Thư mục app đã bị chuyển hoặc đổi tên. Mở `tools\Start-Studio.cmd` một lần; launcher tạo lại shortcut cho vị trí mới. |
+| Launcher báo `Không khởi động được` vì lỗi khác | Bật **Chỉ hiện lỗi** để xem dòng ERROR, rồi bấm **Export Logs…** và gửi file zip cho người hỗ trợ. |
+
+### Cửa sổ launcher và nhật ký (log)
+
+Sau khi Start-Studio chuẩn bị xong, app chạy trong **cửa sổ launcher** riêng (không còn cửa sổ console đầy dòng `200 OK`):
+
+- **Hàng trên cùng:** trạng thái máy chủ (đang khởi động, đang chạy tại địa chỉ nào, đã dừng, không khởi động được và lý do), số bản, các nút **Mở app**, **Dừng / Khởi động**, **Khởi động lại**, và nút đổi ngôn ngữ **VI / EN** của launcher.
+- **Log theo thời gian thực:** mỗi dòng có thời gian, mức (**DEBUG**, **INFO**, **WARNING**, **ERROR**), module (ví dụ `http`, `server`, `series`, `breakdown`, `claude_api`, `unreal`, `ffmpeg`, `worker`) và nội dung. Dòng cảnh báo tô vàng, dòng lỗi tô đỏ. Chọn một dòng để xem đầy đủ ở khung dưới, kể cả traceback; `Ctrl+C` sao chép các dòng đã chọn; chuột phải để chỉ xem module của dòng đó.
+- **Lọc:** ô **Tìm** (tìm trong nội dung, module và traceback, không phân biệt hoa thường), danh sách **Module**, bốn ô chọn mức, và **Chỉ hiện lỗi** để chỉ còn dòng ERROR. Mỗi request thành công là một dòng DEBUG nên mặc định không hiện; request bị từ chối là WARNING và ghi kèm lý do app đã báo, lỗi máy chủ là ERROR. Lựa chọn lọc được nhớ cho lần mở sau.
+- **Export Logs…** tạo một file zip để gửi cho người sửa lỗi: các dòng đang hiển thị, mọi dòng của lần chạy này (kể cả DEBUG), file log của ba ngày gần nhất và thông tin hệ thống (phiên bản app, Python, thư viện, cài đặt log). **Xóa màn hình** chỉ xóa khỏi cửa sổ; log vẫn được ghi vào file.
+- **Cài đặt log…** chọn tạo **một file mỗi ngày** (`studio-2026-10-17.log`) hoặc **một file mỗi lần chạy** (`studio-2026-10-17_14-03-22.log`), số ngày giữ file (1–365, mặc định 30; file cũ hơn tự xóa) và có ghi cả dòng DEBUG vào file hay không. Thay đổi có hiệu lực ngay. **Mở thư mục log** mở `data\logs`.
+
+Khóa API không bao giờ được ghi vào log: chuỗi trông giống khóa (`sk-ant-…`, `Bearer …`, `api_key=…`) bị thay bằng `[REDACTED]`, và gói Export thay đường dẫn thư mục người dùng bằng `%USERPROFILE%`. Log không chứa nội dung kịch bản; lời gọi Claude API, OpenAI, Claude Code chỉ ghi model, số token, chi phí, thời gian và request ID. Lỗi trong các luồng chạy nền (trước đây bị bỏ qua) giờ được ghi kèm traceback; một lỗi lặp lại chỉ được ghi một lần mỗi 5 phút kèm số lần lặp.
+
+Đóng cửa sổ launcher sẽ hỏi lại rồi dừng app. Mở Start-Studio lần nữa khi app đang chạy thì launcher đang mở được đưa lên trước và trình duyệt mở app. Nếu máy thiếu `tkinter` (bản Python không có Tcl/Tk), hoặc chạy `tools\Start-Studio.cmd --console`, app chạy trong console như trước; console khi đó chỉ hiện dòng INFO trở lên.
 
 ### Dành cho người phát triển: dựng thủ công
 
@@ -122,12 +140,13 @@ npm run build --prefix apps/web
 
 Sau khi dựng xong:
 
-1. Mở `tools\Create-Studio-Shortcut.cmd` để tạo shortcut ở vị trí hiện tại.
-2. Nhấp đúp **Start-Studio.lnk**, **Start-Studio.cmd** ở thư mục gốc hoặc mở trực tiếp `tools\Start-Studio.cmd` khi dependency/UI đã được dựng.
-3. Launcher mở ứng dụng tại `http://127.0.0.1:8000/` trong trình duyệt mặc định.
-4. Giữ cửa sổ launcher mở trong lúc dùng; đóng cửa sổ đó để dừng server.
+1. Nhấp đúp shortcut **Start-Studio** ở thư mục gốc, hoặc `tools\Start-Studio.cmd` nếu chưa có shortcut (launcher tạo shortcut ở lần mở này).
+2. Launcher mở ứng dụng tại `http://127.0.0.1:8000/` trong trình duyệt mặc định.
+3. Giữ cửa sổ launcher mở trong lúc dùng; đóng cửa sổ đó để dừng server.
 
-Shortcut sử dụng icon capybara trong `assets/launcher`. File `.lnk` chứa đường dẫn tuyệt đối nên được tạo trên từng máy và không được đưa lên GitHub. Khi chuyển thư mục hoặc máy, tạo lại shortcut. Không copy `.venv` từ máy khác.
+Chạy `.venv\Scripts\python.exe tools\launch_studio.py` không kèm `--window` thì server chạy ngay trong console hiện tại (dành cho phát triển). `--port 5173` chạy một bản thử song song với app đang chạy ở cổng 8000.
+
+Shortcut dùng icon capybara `assets/launcher/studio.ico` (dựng từ `capybara.png`). Không copy `.venv` từ máy khác.
 
 Khởi chạy lại khi server Studio cùng phiên bản đang chạy sẽ mở phiên đang có. Nếu server là bản cũ, launcher yêu cầu đóng cửa sổ cũ và mở lại; nếu cổng 8000 thuộc ứng dụng khác, launcher báo xung đột. Khi sửa Python cần khởi động lại backend. Khi sửa frontend, launcher tự build lại ở lần mở tiếp theo.
 
@@ -150,7 +169,7 @@ Bạn có thể mở app và thử các bước đầu ngay, chưa cần Unreal 
    Thuyền trưởng: Tôi xuống ngay.
    ```
 
-   Muốn AI thật đọc kịch bản thì chọn OpenAI hoặc Claude Code ở **Cài đặt → Dịch vụ AI & giọng thoại**.
+   Muốn AI thật đọc kịch bản thì chọn OpenAI, Claude API hoặc Claude Code ở **Cài đặt → Dịch vụ AI & giọng thoại**.
 4. **Kết nối Unreal (từ S3 trở đi).** Vào **Cài đặt → Kết nối Unreal**, chọn `UnrealEditor-Cmd.exe` và file `.uproject`, rồi quay lại **S3** để quét asset. Ở **CS1**, chọn asset cho từng nhân vật, bối cảnh và duyệt.
 5. **Style bible (S4, CS2).** Viết mô tả hình ảnh, thêm ảnh tham chiếu, gán giọng rồi duyệt.
 6. **Tập phim (Khu A).** Bấm **Xem chi phí phân tích** rồi phân tích kịch bản thành scene và shot, duyệt từng scene (C1), duyệt phần bổ sung thư viện (C2), chốt cách làm từng shot và chi phí (C3), tạo thoại và duyệt timing (C4).
@@ -163,7 +182,7 @@ Khi không biết làm gì tiếp, nhìn dòng **Bước tiếp theo** ngay dư�
 
 | Việc | Cần cấu hình ở tab Cài đặt |
 |---|---|
-| Liệt kê nhân vật (S2) và chia scene/shot (03) bằng AI thật | OpenAI API key, hoặc Claude Code đã đăng nhập trên máy |
+| Liệt kê nhân vật (S2) và chia scene/shot (03) bằng AI thật | OpenAI API key, khóa Claude API của Anthropic, hoặc Claude Code đã đăng nhập trên máy |
 | Quét asset (S3), dựng sequence và animation, render proxy và final của nhánh UE | Unreal Engine 5.8 và project `.uproject` |
 | Chụp reference từ Unreal, proxy, rough cut, chuẩn hóa final, ghép stem, gói bàn giao | FFmpeg có kèm ffprobe |
 | Thoại (C4) | ElevenLabs |
@@ -303,6 +322,38 @@ Vào **Cài đặt → Công cụ xử lý video & Foley local**, chọn `ffmpeg
 
 
 
+### Claude API
+
+Dùng khi bạn có API key của Anthropic (tạo ở [console.anthropic.com](https://console.anthropic.com), mục **API Keys**). Chế độ này tính phí theo token vào tài khoản Anthropic của khóa, riêng với gói Claude Pro/Max, và đi qua Sổ chi phí cùng trần chi phí tháng của app như OpenAI.
+
+1. Vào **Cài đặt → Dịch vụ AI & giọng thoại**, ở khung **Phân tích kịch bản bằng AI** chọn chế độ **Claude API · có phí**.
+2. Chọn **Mô hình Claude**:
+
+   | Model | Giá tham chiếu (USD / 1 triệu token vào / ra) | Ghi chú |
+   |---|---|---|
+   | Claude Opus 5.5 | 4 / 20 | Mặc định, đề xuất |
+   | Claude Sonnet 5.5 | 2 / 10 | Cân bằng giữa chất lượng và giá |
+   | Claude Haiku 5.5 | 0,10 / 0,50 (prompt trên 100K token: 0,50 / 2,50) | Rẻ nhất, không có model dự phòng |
+   | Claude Fable 5.1 | 10 / 50 | Mạnh nhất, giá cao |
+
+3. Chọn **Mức suy nghĩ** (thấp, vừa, cao) và **Giới hạn token đầu ra** (1.024–64.000, mặc định 16.000). Claude luôn suy nghĩ trước khi trả lời; token suy nghĩ tính vào giới hạn này, nên kịch bản dài ở bước 03 có thể cần giới hạn cao hơn.
+4. Ô **Khi Claude từ chối theo chính sách an toàn, cho Anthropic chạy lại trên model dự phòng** bật sẵn (trừ Haiku 5.5, model này không có dự phòng). Khi bật, nếu bộ lọc an toàn của Anthropic từ chối yêu cầu, Anthropic tự chạy lại trên model dự phòng trong cùng lần gọi; khoản giữ ngân sách tính thêm lần chạy đó, và job ghi tên model đã trả lời. Tắt ô này nếu muốn khoản giữ nhỏ hơn.
+5. Bấm **Lưu cấu hình AI**, rồi **Nhập khóa trong cửa sổ Windows** và dán khóa vào hộp thoại bảo mật của Windows. Khóa được lưu trong Windows Credential Manager; trang web, cơ sở dữ liệu và nhật ký không bao giờ thấy giá trị khóa.
+6. Bấm **Kiểm tra kết nối**. App hỏi Anthropic xem khóa có dùng được model đã lưu không; lần kiểm tra này không tạo nội dung và không tính phí, nhưng cũng chưa chứng minh một lần phân tích sẽ thành công.
+7. Đặt trần chi phí tháng ở **Thư viện series → S1**. Từ đó **Xem chi phí liệt kê** (S2) và **Xem chi phí phân tích** (03) hiện số tiền app giữ tối đa cho yêu cầu, rồi mới cho gửi.
+
+Khoản giữ là mức trần: app tính prompt theo số byte của kịch bản (luôn nhiều hơn số token) cộng giới hạn token đầu ra, cộng lần chạy dự phòng nếu bật. Khi Claude trả lời, Sổ chi phí ghi chi phí thật theo usage Anthropic báo về, thường thấp hơn nhiều.
+
+Khi có sự cố, job cho biết Claude đã chạy hay chưa:
+
+- **Claude chưa chạy** (khóa sai, tài khoản hết credit, bị giới hạn tốc độ, Anthropic quá tải, không có mạng): job bị chặn, khoản giữ được trả lại, sửa nguyên nhân rồi gửi lại.
+- **Claude đã chạy nhưng kết quả không dùng được** (từ chối theo chính sách an toàn, bị cắt vì vượt giới hạn token): job bị chặn, Sổ chi phí ghi chi phí theo usage. Với kết quả bị cắt, tăng giới hạn token hoặc chia kịch bản thành phần nhỏ hơn.
+- **Không rõ Claude đã chạy tới đâu** (mất kết nối giữa chừng, lỗi máy chủ): job chờ đối soát, khoản giữ còn nguyên. Kiểm tra mục Usage trên Console của Anthropic rồi đóng khoản giữ trong Sổ chi phí ở S1; app không tự gửi lại.
+
+App luôn gửi tới `api.anthropic.com` và không đọc biến môi trường `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` hay `ANTHROPIC_BASE_URL`, nên cấu hình của công cụ khác trên máy (kể cả Claude Code) không làm khóa bị gửi sang nơi khác.
+
+**Claude API hay Claude qua Claude Code?** Claude API dùng khóa API và tính tiền theo token, có Sổ chi phí, trần tháng và chọn model chính xác. Claude qua Claude Code dùng tài khoản đang đăng nhập trong Claude Code (thường là gói đăng ký) và không đi qua Sổ chi phí. Khi chia sẻ app, mỗi người nhập khóa API của chính họ ở chế độ Claude API.
+
 ### Claude qua Claude Code
 
 Dùng khi máy đã có Claude Code (ứng dụng, tiện ích VS Code hoặc bản dòng lệnh) và bạn đã đăng nhập trong đó bằng tài khoản của chính mình.
@@ -315,7 +366,7 @@ App không có ô nhập tài khoản Claude và không lưu tài khoản. Việ
 
 Nếu cài Claude Code bằng lệnh trong PowerShell (`irm https://claude.ai/install.ps1 | iex`) mà sau đó gõ `claude` báo "not recognized", thì thư mục `%USERPROFILE%\.local\bin` chưa nằm trong PATH. App vẫn tìm thấy Claude Code ở thư mục đó. Để đăng nhập lần đầu, chạy `& "$env:USERPROFILE\.local\bin\claude.exe"` trong PowerShell và làm theo trang đăng nhập mở trên trình duyệt.
 
-**Khi chia sẻ app cho người khác:** mỗi người dùng Claude Code đã cài và đã đăng nhập trên máy của họ. Tài liệu Agent SDK của Anthropic ghi rằng nhà phát triển bên thứ ba không được tự cung cấp đăng nhập claude.ai hay hạn mức gói đăng ký trong sản phẩm của mình khi chưa được Anthropic duyệt, nên app không có luồng đăng nhập Claude riêng. Nếu bạn phát hành app rộng rãi và muốn người dùng chạy trên gói đăng ký của họ, hãy xin Anthropic duyệt trước; cách không cần duyệt là dùng API key.
+**Khi chia sẻ app cho người khác:** mỗi người dùng Claude Code đã cài và đã đăng nhập trên máy của họ. Tài liệu Agent SDK của Anthropic ghi rằng nhà phát triển bên thứ ba không được tự cung cấp đăng nhập claude.ai hay hạn mức gói đăng ký trong sản phẩm của mình khi chưa được Anthropic duyệt, nên app không có luồng đăng nhập Claude riêng. Nếu bạn phát hành app rộng rãi và muốn người dùng chạy trên gói đăng ký của họ, hãy xin Anthropic duyệt trước; cách không cần duyệt là chế độ [Claude API](#claude-api) với khóa API của từng người.
 
 ### OpenAI
 
@@ -348,7 +399,7 @@ Sao lưu bị chặn khi còn việc đang chờ, đang chạy hoặc chưa đ�
 | **Khu B · Dựng shot** | Nhánh UE và nguồn Hybrid (tạo sequence 07, gán animation 08-b1→b6, chốt chuyển động C5, cache và proxy 09/C6), nhánh AI (đầu vào 07, draft 08, duyệt C5, chốt draft 09/C6), rồi rough cut theo scene và khóa dựng C7. |
 | **Khu C · Final & xuất phim** | Final và chuẩn hóa từng shot rồi duyệt final kỹ thuật (10, 11, C8); Foley và âm thanh trên hình đã khóa (12/C9); gói timeline, phụ đề, MP4 preview và QC tự động (13); bàn giao cho DaVinci Resolve và xác nhận xuất phim (C10). |
 | **Hệ thống** | Hàng đợi GPU dùng chung; sao lưu và phục hồi dữ liệu. |
-| **Cài đặt** | Bốn nhóm: Kết nối Unreal; Dịch vụ AI và giọng thoại (OpenAI, ElevenLabs); Model video AI (Seedance 2.5, MiniMax H3); Công cụ xử lý video và Foley local (FFmpeg, HunyuanVideo-Foley). |
+| **Cài đặt** | Bốn nhóm: Kết nối Unreal; Dịch vụ AI và giọng thoại (OpenAI, Claude API, Claude Code, ElevenLabs); Model video AI (Seedance 2.5, MiniMax H3); Công cụ xử lý video và Foley local (FFmpeg, HunyuanVideo-Foley). |
 
 Bốn tab Khu 0, A, B, C đi theo đúng thứ tự của sơ đồ workflow V4.5. Mỗi tab chia thành vài bước và chỉ hiện một bước mỗi lúc; dấu trên bước cho biết checkpoint của bước đó đã duyệt hay chưa. Thanh trên cùng luôn hiện khi cuộn trang: **Dự án** và **Tập** đang làm (chọn một lần, dùng chung cho mọi tab), số checkpoint đã duyệt, trạng thái cấu hình Unreal, nút ngôn ngữ **VI / EN** và nút ban ngày/ban đêm. Ngay dưới hàng tab là dòng tiến độ: bấm vào một checkpoint để mở đúng tab và đúng bước, hoặc bấm **Đi tới** để làm bước tiếp theo.
 
@@ -362,7 +413,7 @@ App gọi các dịch vụ AI qua API và chạy một model trên máy:
 
 | Việc | Công cụ | Ở bước |
 |---|---|---|
-| Liệt kê nhân vật và bối cảnh; chia scene/shot kèm bản dịch và prompt tiếng Anh | OpenAI API, Claude qua Claude Code trên máy, hoặc chế độ mô phỏng | S2, 03 |
+| Liệt kê nhân vật và bối cảnh; chia scene/shot kèm bản dịch và prompt tiếng Anh | OpenAI API, Claude API, Claude qua Claude Code trên máy, hoặc chế độ mô phỏng | S2, 03 |
 | Thoại | ElevenLabs text-to-speech | 06 / C4 |
 | Video draft và final | Seedance 2.5, MiniMax H3 | 08, 10 |
 | Foley | HunyuanVideo-Foley cài trên máy, chạy bằng GPU | 12 |
@@ -372,9 +423,11 @@ AI chỉ đề xuất. Người dùng duyệt từng checkpoint; AI không tự 
 
 Mỗi yêu cầu có phí được giữ trước trong Sổ chi phí và so với trần chi phí tháng đặt ở S1; chưa đặt trần thì app không gửi yêu cầu có phí. Có ba cổng ngân sách: ① khi chốt C3, ② trước khi tạo draft video, ③ trước lô final. Yêu cầu không rõ kết quả không tự gửi lại: người dùng đóng khoản giữ trong Sổ chi phí rồi mới gửi lại được.
 
+**Claude API** gọi Anthropic bằng khóa API của bạn qua thư viện chính thức `anthropic`: mỗi job là một yêu cầu stream, kết quả bắt buộc theo JSON schema của app, model và mức suy nghĩ theo cấu hình. Lượt dùng tính theo token, đi qua Sổ chi phí và trần tháng như OpenAI.
+
 **Claude qua Claude Code** gọi chương trình Claude Code đã cài và đã đăng nhập trên máy; lượt dùng tính vào tài khoản đang đăng nhập ở đó (gói đăng ký Claude, hoặc tính theo token nếu Claude Code đăng nhập bằng khóa API) và không đi qua Sổ chi phí hay trần tháng của app.
 
-**Chế độ mô phỏng** tách tên và chia shot theo quy tắc cố định để thử luồng; nó không gọi model AI, không dịch và không viết prompt. **OpenAI API** có thể phát sinh phí và cần key cùng model mà tài khoản được dùng. Nút kiểm tra kết nối chỉ đọc thông tin model: không tạo nội dung, không tính phí tạo nội dung và không xác nhận chất lượng.
+**Chế độ mô phỏng** tách tên và chia shot theo quy tắc cố định để thử luồng; nó không gọi model AI, không dịch và không viết prompt. **OpenAI API** và **Claude API** có thể phát sinh phí và cần key cùng model mà tài khoản được dùng. Nút kiểm tra kết nối chỉ đọc thông tin model: không tạo nội dung, không tính phí tạo nội dung và không xác nhận chất lượng.
 
 ## 7. Phiên bản, khóa và duyệt
 
@@ -390,10 +443,12 @@ Mỗi lần duyệt một checkpoint, app ghi lại đúng phiên bản đã duy
 
 | Thành phần | Trạng thái và giới hạn |
 |---|---|
+| Launcher và nhật ký | Cửa sổ launcher (tkinter) chạy máy chủ trong cùng tiến trình, hiện log theo thời gian thực với bốn mức, lọc theo module, tìm kiếm, chế độ chỉ hiện lỗi và Export Logs; log ghi vào `data\logs` theo ngày hoặc theo lần chạy, tự xóa file cũ. Mỗi request, mỗi sự kiện đã ghi vào nhật ký thao tác, mỗi lời gọi Claude API/OpenAI/Claude Code, mỗi lần chạy Unreal, FFmpeg và Foley đều có dòng log. Đã chạy thật trên máy phát triển (khởi động khoảng 3,5 giây với dữ liệu mới, báo đúng khi cổng bị chiếm). Log chỉ phục vụ chẩn đoán: không thay nhật ký thao tác trong cơ sở dữ liệu và không là bằng chứng một bước đã chạy đúng trên Unreal hay dịch vụ thật. |
 | Nền tảng local | Có UI, API, migration SQLite, thư mục dự án, phiên bản, checkpoint và hàng đợi công việc giữ được qua lần khởi động lại. |
 | Workflow · nền | App chỉ có một workflow, theo sơ đồ V4.5. Có sổ chi phí và trần tháng chặn yêu cầu có phí, một bộ phân xử GPU dùng chung cho dựng và render Unreal, quét asset và Foley, cấu hình FFmpeg. Ghi được mọi checkpoint của sơ đồ: CS1, CS2 và C1–C10. Dự án tạo từ bản trước 2026.10.05.2 được tự chuyển sang workflow này ở lần khởi động đầu tiên, sau khi app chép cơ sở dữ liệu sang `data/archive/`; dữ liệu V1 của dự án đó vẫn nằm trong cơ sở dữ liệu nhưng không còn màn hình nào hiển thị. |
 | Thư viện series · Khu 0 | Có S1, S2 (chế độ mô phỏng tách tên theo quy tắc; OpenAI có adapter nhưng chưa gọi live), S3 quét Asset Registry chỉ đọc và CS1. Script quét chưa chạy trên Unreal 5.8 thật; thumbnail, tạo retargeter và khóa chuẩn vào project UE chưa có. |
 | Style bible · S4/CS2 | Có cụm từ style cố định, từ cấm, mô tả hình ảnh và prompt mẫu cho từng mục, ảnh tham chiếu nhập tay hoặc chụp từ Unreal, gán giọng ElevenLabs và duyệt CS2 có version. Script chụp chưa chạy trên Unreal 5.8 thật; danh sách giọng ElevenLabs chưa gọi live; bước test shot AI chờ kết nối video AI. |
+| Phân tích kịch bản qua Claude API | Chọn ở **Cài đặt → Dịch vụ AI**: bốn model Claude, mức suy nghĩ, giới hạn token đầu ra và model dự phòng khi Claude từ chối. Khóa nhập qua hộp thoại Windows và lưu trong Windows Credential Manager. Gọi qua thư viện chính thức `anthropic` 1.15: một yêu cầu stream mỗi job, kết quả theo JSON schema, không tự gửi lại, chi phí thật tính theo usage từng lần chạy (kể cả lần chạy dự phòng). Đã kiểm bằng phản hồi Anthropic giả lập đi qua chính thư viện đó (test tự động và thử trên giao diện ở cả hai ngôn ngữ); chưa gọi live với khóa thật, nên chất lượng kết quả với kịch bản thật, thời gian chạy và các thông báo lỗi thật của Anthropic chưa được kiểm chứng. |
 | Phân tích kịch bản qua Claude Code | Chọn ở **Cài đặt → Dịch vụ AI**. App chạy `claude -p` không kèm công cụ nào, không nạp cài đặt riêng của Claude Code, trong một thư mục trống, và nhận kết quả JSON theo schema; kịch bản đi qua stdin. App không hỏi và không lưu tài khoản Claude. Đã chạy thật trên máy phát triển với kịch bản mẫu 8 dòng (S2 khoảng 6 giây, bước 03 khoảng 52 giây, kết quả qua bộ kiểm của app). Chưa thử với kịch bản dài, với gói Pro, hay khi chạm hạn mức; lỗi từ Claude Code được hiện nguyên văn và việc bị chặn có thể gửi lại. |
 | Tập phim · Khu A | Có breakdown với ID scene/shot ổn định, duyệt theo scene, C1, đối chiếu với thư viện, danh sách thiếu và C2 tăng version thư viện. Chế độ mô phỏng chia mỗi dòng thành một shot, không dịch; adapter OpenAI chưa gọi live. |
 | Phương thức và chi phí · 05/C3 | App đề xuất UE/AI/Hybrid theo quy tắc cứng của sơ đồ, đánh dấu shot thiếu motion để tạo bằng Kimodo ở bước 08, tính chi phí dự kiến từng shot theo bảng giá người dùng nhập và chặn chốt C3 khi vượt trần tháng (cổng ngân sách ①). Khóa phương thức theo từng shot hoặc cả scene. Chi phí là ước tính; app không tự lấy giá từ nhà cung cấp. |
@@ -435,6 +490,8 @@ Yêu cầu có kết quả chưa rõ ở trạng thái chờ đối soát; app k
 ```text
 data/
 ├── studio.sqlite3
+├── launcher.json            cài đặt của cửa sổ launcher (ngôn ngữ, bộ lọc, cách tạo file log)
+├── logs/                    file log theo ngày hoặc theo lần chạy
 ├── archive/                 bản chép cơ sở dữ liệu trước lần chuyển sang một workflow
 └── projects/<project-id>/
     ├── media/               ảnh reference, proxy, draft, rough cut, final
@@ -457,10 +514,9 @@ API key thuộc kho bảo mật Windows, không nằm trong file dự án, SQLit
 | `services/api/studio/` | API, nghiệp vụ từng khu của workflow, hàng đợi, kết nối dịch vụ AI và kho bí mật. Thông báo viết bằng tiếng Việt; `i18n.py` và `i18n_en.py` đổi chúng sang tiếng Anh ở lớp API khi giao diện chạy tiếng Anh. |
 | `services/api/migrations/` | Migration SQLite. Các migration đầu thuộc workflow V1 và được giữ làm lịch sử của cơ sở dữ liệu. |
 | `tools/unreal/` | Bốn script Python chạy trong Unreal Editor: quét asset, chụp reference, dựng tập, render. |
-| `Start-Studio.cmd` | File khởi chạy: chuẩn bị môi trường, cài thư viện, build giao diện rồi mở app. |
-| `tools/` | Launcher và công cụ tạo shortcut. |
+| `tools/` | `Start-Studio.cmd` (file khởi chạy: chuẩn bị môi trường, cài thư viện, build giao diện rồi mở cửa sổ launcher), launcher `launch_studio.py` (tạo shortcut Start-Studio ở thư mục gốc) và cửa sổ log `launcher_window.py`. |
 | `resources/app-build.json` | Số bản mà giao diện, máy chủ và launcher dùng để nhận ra nhau. |
-| `assets/launcher/` | Ảnh và icon launcher. |
+| `assets/launcher/` | Ảnh và icon capybara của shortcut và cửa sổ launcher. |
 | `assets/screenshots/` | Ảnh chụp màn hình dùng trong README này, chụp trên dữ liệu mẫu. |
 | `archive/v1/` | Mã nguồn của workflow V1 đã gỡ khỏi app: backend, màn hình, script Unreal, schema. App không nạp thư mục này; xóa nó không ảnh hưởng tới app. File `DOC-TRUOC.txt` trong đó mô tả nội dung. |
 

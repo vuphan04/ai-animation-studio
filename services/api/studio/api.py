@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import secrets
 import sqlite3
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -19,6 +21,7 @@ from .ai_settings import AISettings
 from .ai_video_service import AiVideoService
 from .animation_service import AnimationService
 from .breakdown_service import BreakdownService
+from .claude_api import ClaudeAPI
 from .claude_code import ClaudeCodeSettings
 from .budget import BudgetService
 from .delivery_service import DeliveryService
@@ -26,6 +29,7 @@ from .dialogue_service import DialogueService
 from .domain import DomainError
 from .episode_api import install as install_episode_api
 from .final_service import FinalService
+from . import logs
 from .i18n import EnglishResponses
 from .openai_client import check_connection
 from .progress import WorkflowProgress
@@ -86,6 +90,14 @@ class SaveAISettingsIn(Strict):
     model: str
     max_output_tokens: int
     expected_revision: int
+    claude_model: str | None = None
+    claude_effort: str | None = None
+    claude_max_output_tokens: int | None = None
+    claude_fallback: bool | None = None
+
+
+class AIKeyIn(Strict):
+    provider_kind: str = "OPENAI"
 
 
 class RecoverySettingsIn(Strict):
@@ -98,6 +110,24 @@ class RecoveryIn(Strict):
     kind: str
     backup_id: str | None = None
     ue_closed: bool = False
+
+
+http_log = logs.get("http")
+worker_log = logs.get("worker")
+
+
+def run_steps(steps, throttle: logs.Throttle, worker_name: str) -> None:
+    """One pass of a background worker. Each step is guarded on its own, so a step that keeps failing neither stops the
+    worker nor starves the steps after it; a failure that repeats is logged once per throttle window with a count."""
+    for step in steps:
+        try:
+            step()
+        except Exception as exc:
+            name = getattr(step, "__qualname__", repr(step))
+            shown, held_back = throttle.check((name, type(exc).__name__, str(exc)))
+            if shown:
+                worker_log.error("%s: %s failed: %s: %s%s", worker_name, name, type(exc).__name__, exc,
+                                 f" (repeated {held_back} more times since the last report)" if held_back else "", exc_info=True)
 
 
 def create_app(data_root: Path | None = None, *, testing: bool = False, worker: bool = True) -> FastAPI:
@@ -126,14 +156,13 @@ def create_app(data_root: Path | None = None, *, testing: bool = False, worker: 
     stop = threading.Event()
 
     def loop(pause: float, *steps):
-        """One background worker: run each step in turn, forever. A step stores its own errors; the guard keeps the worker alive."""
+        """One background worker: run each step in turn, forever. A step stores its own errors in its job; anything it
+        did not expect is logged and the worker carries on."""
         def run():
+            throttle = logs.Throttle()
+            name = threading.current_thread().name
             while not stop.is_set():
-                try:
-                    for step in steps:
-                        step()
-                except Exception:
-                    pass
+                run_steps(steps, throttle, name)
                 stop.wait(pause)
         return run
 
@@ -172,11 +201,14 @@ def create_app(data_root: Path | None = None, *, testing: bool = False, worker: 
     install_zone_c_api(app, episode_sound, delivery, progress)
 
     @app.exception_handler(DomainError)
-    async def domain_error(_request: Request, exc: DomainError):
+    async def domain_error(request: Request, exc: DomainError):
+        # The request line written by `access_log` carries the reason the operator was shown.
+        request.state.log_detail = str(exc)
         return JSONResponse({"detail": str(exc)}, status_code=exc.status)
 
     @app.exception_handler(sqlite3.IntegrityError)
-    async def integrity_error(_request: Request, exc: sqlite3.IntegrityError):
+    async def integrity_error(request: Request, exc: sqlite3.IntegrityError):
+        request.state.log_detail = f"database conflict: {exc}"
         return JSONResponse({"detail": "database uniqueness or relationship conflict"}, status_code=409)
 
     @app.middleware("http")
@@ -215,6 +247,23 @@ def create_app(data_root: Path | None = None, *, testing: bool = False, worker: 
             response.headers["Access-Control-Allow-Headers"] = "Content-Type,X-Session-Token"
             response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
             response.headers["Vary"] = "Origin"
+        return response
+
+    @app.middleware("http")
+    async def access_log(request: Request, call_next):
+        """One line per request: DEBUG when it succeeded, WARNING when refused (with the reason), ERROR on a server fault."""
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            http_log.exception("%s %s -> 500 after %.0f ms: unhandled error", request.method, request.url.path, (time.perf_counter() - started) * 1000)
+            raise
+        status = response.status_code
+        level = logging.ERROR if status >= 500 else logging.WARNING if status >= 400 else logging.DEBUG
+        if http_log.isEnabledFor(level):
+            detail = getattr(request.state, "log_detail", None)
+            http_log.log(level, "%s %s -> %d in %.0f ms%s", request.method, request.url.path, status, (time.perf_counter() - started) * 1000,
+                         f": {detail}" if detail else "")
         return response
 
     @app.get("/health")
@@ -256,18 +305,19 @@ def create_app(data_root: Path | None = None, *, testing: bool = False, worker: 
 
     @app.post("/settings/ai")
     def save_ai_settings(body: SaveAISettingsIn):
-        return ai_settings.save(body.provider_kind, body.model, body.max_output_tokens, body.expected_revision)
+        claude = {field: getattr(body, field) for field in ("claude_model", "claude_effort", "claude_max_output_tokens", "claude_fallback")}
+        return ai_settings.save(body.provider_kind, body.model, body.max_output_tokens, body.expected_revision, **claude)
 
     @app.post("/settings/ai/key/prompt")
-    def prompt_ai_key():
+    def prompt_ai_key(body: AIKeyIn | None = None):
         try:
-            return ai_settings.prompt_key()
+            return ai_settings.prompt_key((body or AIKeyIn()).provider_kind)
         except RuntimeError as exc:
             raise DomainError(str(exc), 409) from exc
 
     @app.post("/settings/ai/key/delete")
-    def delete_ai_key():
-        return ai_settings.delete_key()
+    def delete_ai_key(body: AIKeyIn | None = None):
+        return ai_settings.delete_key((body or AIKeyIn()).provider_kind)
 
     @app.get("/settings/claude-code")
     def get_claude_code():
@@ -287,8 +337,11 @@ def create_app(data_root: Path | None = None, *, testing: bool = False, worker: 
         return claude_code.test()
 
     @app.post("/settings/ai/check")
-    def check_ai_connection():
-        return check_connection(ai_settings.get()["model"])
+    def check_ai_connection(body: AIKeyIn | None = None):
+        settings = ai_settings.get()
+        if (body or AIKeyIn()).provider_kind == "CLAUDE_API":
+            return ClaudeAPI().check(settings["claude_model"])
+        return check_connection(settings["model"])
 
     @app.get("/settings/recovery")
     def recovery_settings():

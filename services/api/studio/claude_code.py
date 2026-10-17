@@ -14,8 +14,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
+from . import logs
 from .domain import DomainError, canonical
 from .service import now
 
@@ -26,6 +28,7 @@ NOTE = "Dùng Claude Code trên máy này. Lượt dùng tính vào tài khoản
 MISSING = "Chưa tìm thấy Claude Code trên máy này; vào Cài đặt → Dịch vụ AI để kiểm tra."
 TEST_SCHEMA = {"type": "object", "properties": {"ready": {"type": "boolean"}}, "required": ["ready"], "additionalProperties": False}
 NAMES = ("claude.exe", "claude") if sys.platform == "win32" else ("claude",)
+log = logs.get("claude_code")
 
 
 class ClaudeCodeError(DomainError):
@@ -93,22 +96,31 @@ class ClaudeCode:
                 "--permission-mode", "dontAsk", "--max-turns", "8"]
         if model != "default":
             args += ["--model", model]
-        with tempfile.TemporaryDirectory(prefix="studio-claude-") as folder:
-            done = self._call(args, text=canonical(payload), timeout=timeout, cwd=folder)
+        log.info("Running Claude Code (model %s, time limit %d s)", model, timeout)
+        started = time.monotonic()
+        try:
+            with tempfile.TemporaryDirectory(prefix="studio-claude-") as folder:
+                done = self._call(args, text=canonical(payload), timeout=timeout, cwd=folder)
+        except ClaudeCodeError as exc:
+            log.warning("Claude Code did not run: %s", exc)
+            raise
         try:
             value = json.loads(done.stdout)
             if not isinstance(value, dict):
                 raise ValueError("not an object")
         except ValueError as exc:
             detail = (done.stderr or done.stdout or "").strip().splitlines()
+            log.error("Claude Code exited %d without readable JSON after %.1f s\n%s", done.returncode, time.monotonic() - started, logs.tail(done.stderr or done.stdout))
             raise ClaudeCodeError("Claude Code không trả về kết quả đọc được" + (f": {detail[-1][:300]}" if detail else ".")) from exc
         output = value.get("structured_output")
         if done.returncode != 0 or value.get("is_error") or not isinstance(output, dict):
             reason = value.get("result") if isinstance(value.get("result"), str) and value.get("result").strip() else str(value.get("subtype") or "không có kết quả có cấu trúc")
+            log.warning("Claude Code answered without a structured result after %.1f s (exit %d): %s", time.monotonic() - started, done.returncode, reason.strip()[:300])
             raise ClaudeCodeError(f"Claude Code báo lỗi: {reason.strip()[:400]}")
         # Claude Code also makes small housekeeping calls on another model; the one that wrote the most is the one that answered.
         used = {name: usage for name, usage in (value.get("modelUsage") or {}).items() if isinstance(usage, dict)} if isinstance(value.get("modelUsage"), dict) else {}
         answered = max(used, key=lambda name: used[name].get("outputTokens") or 0, default=None)
+        log.info("Claude Code answered in %.1f s with %s, session %s", time.monotonic() - started, answered or "an unreported model", value.get("session_id") or "-")
         return {"output": output, "session_id": str(value.get("session_id") or ""), "model": answered}
 
 

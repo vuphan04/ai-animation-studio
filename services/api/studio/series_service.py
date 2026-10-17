@@ -11,12 +11,12 @@ import uuid
 from pathlib import Path
 
 from . import budget, gpu_queue, workflow
-from .ai_settings import AISettings
+from .ai_settings import AISettings, KEY_MISSING, key_available
 from .domain import DomainError, canonical, digest, UE_TARGET_VERSION
-from .openai_client import PlannerNotSent, PlannerRemoteError
-from .secrets import get_provider_key
+from .openai_client import PlannerAnswered, PlannerNotSent, PlannerRemoteError
 from .series_domain import (COLOR_SPACES, ENTITY_KINDS, MAPPABLE, VIDEO_MODELS, entity_key, fold, suggest,
                             validate_extraction, validate_scan_result)
+from .claude_api import ClaudeAPIExtractor, request_fields as claude_api_fields
 from .claude_code import MISSING as CLAUDE_CODE_MISSING, ClaudeCodeSettings
 from .series_extractor import ClaudeCodeExtractor, FixtureExtractor, OpenAIExtractor
 from .service import Studio, now, require, uid
@@ -36,10 +36,10 @@ class SeriesService:
         self.custom_extractor = extractor
         self.claude_code = claude_code or ClaudeCodeSettings(studio)
         self.ai_settings = AISettings(studio, self.claude_code)
-        self.secret_available = secret_available or (lambda: bool(get_provider_key("OPENAI")))
+        self.secret_available = secret_available or key_available
         with self.db.transaction() as conn:
             # A paid request interrupted by a restart has an unknown outcome and is never resent.
-            conn.execute("UPDATE series_extraction_jobs SET state=CASE WHEN provider_kind='OPENAI' THEN 'RECONCILING' ELSE 'BLOCKED' END,error='Backend khởi động lại trong lúc liệt kê.',updated_at=? WHERE state='RUNNING'", (now(),))
+            conn.execute("UPDATE series_extraction_jobs SET state=CASE WHEN provider_kind IN ('OPENAI','CLAUDE_API') THEN 'RECONCILING' ELSE 'BLOCKED' END,error='Backend khởi động lại trong lúc liệt kê.',updated_at=? WHERE state='RUNNING'", (now(),))
             conn.execute("UPDATE ue_asset_scans SET state='RECONCILING',error='Backend khởi động lại trong lúc quét; đóng Unreal cũ rồi xác nhận để quét lại.',updated_at=? WHERE state='RUNNING'", (now(),))
 
     # ---- S1 standards -------------------------------------------------------------------------------------------
@@ -98,6 +98,8 @@ class SeriesService:
             return self.custom_extractor
         if settings["provider_kind"] == "CLAUDE_CODE":
             return ClaudeCodeExtractor(self.claude_code)
+        if settings["provider_kind"] == "CLAUDE_API":
+            return ClaudeAPIExtractor()
         return OpenAIExtractor() if settings["provider_kind"] == "OPENAI" else FixtureExtractor()
 
     def _extraction_request(self, conn, project_id: str, screenplay_id: str) -> tuple[dict, object]:
@@ -113,6 +115,8 @@ class SeriesService:
         elif provider.kind == "CLAUDE_CODE":
             chosen = self.claude_code.get()
             request.update({"provider_model": chosen["model"], "settings_revision": chosen["revision"]})
+        elif provider.kind == "CLAUDE_API":
+            request.update(claude_api_fields(settings))
         request["input_hash"] = digest(request)
         return request, provider
 
@@ -146,8 +150,8 @@ class SeriesService:
             if provider.kind == "CLAUDE_CODE" and not self.claude_code.available():
                 raise DomainError(CLAUDE_CODE_MISSING, 409)
             if provider.paid:
-                if not self.secret_available():
-                    raise DomainError("Chưa có khóa OpenAI trong kho bảo mật; vào Cài đặt để nhập khóa.", 409)
+                if not self.secret_available(provider.kind):
+                    raise DomainError(KEY_MISSING.get(provider.kind, KEY_MISSING["OPENAI"]), 409)
                 budget.reserve(conn, project_id, operation_id, gate=0, category="SERIES_EXTRACT",
                                provider_kind=provider.kind, currency="USD", amount_micro=estimate)
             stamp = now()
@@ -204,6 +208,13 @@ class SeriesService:
                              (result.actual_micro, result.provider_request_id, result.resolved_model, canonical({**listing, "applied": applied}), now(), job["id"]))
                 budget.settle(conn, job["operation_id"], result.actual_micro)
                 self.studio.audit(conn, job["project_id"], "series.extraction_completed", job["id"], applied)
+        except PlannerAnswered as exc:
+            # The provider ran the request and reported its usage; only the answer is unusable.
+            with self.db.transaction() as conn:
+                conn.execute("UPDATE series_extraction_jobs SET state='BLOCKED',actual_micro=?,provider_request_id=COALESCE(?,provider_request_id),provider_model=COALESCE(?,provider_model),error=?,updated_at=? WHERE id=?",
+                             (exc.actual_micro, exc.request_id or None, exc.model, str(exc)[:500], now(), job["id"]))
+                budget.settle(conn, job["operation_id"], exc.actual_micro)
+                self.studio.audit(conn, job["project_id"], "series.extraction_blocked", job["id"], {"reason": type(exc).__name__})
         except Exception as exc:
             not_sent = isinstance(exc, PlannerNotSent) or not sent
             state = "BLOCKED" if not_sent else "RECONCILING"

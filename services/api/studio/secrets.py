@@ -45,7 +45,7 @@ def prompt_provider_key(provider: str) -> None:
     """Ask for a key in a native Windows dialog, outside the browser DOM."""
     if sys.platform != "win32":
         raise RuntimeError("Native Windows credential dialog is unavailable")
-    label = {"OPENAI": "OpenAI", "SEEDANCE_ARK": "Seedance · Volcengine", "SEEDANCE_BYTEPLUS": "Seedance · BytePlus", "ELEVENLABS": "ElevenLabs", "MINIMAX": "MiniMax"}.get(provider)
+    label = {"OPENAI": "OpenAI", "SEEDANCE_ARK": "Seedance · Volcengine", "SEEDANCE_BYTEPLUS": "Seedance · BytePlus", "ELEVENLABS": "ElevenLabs", "MINIMAX": "MiniMax", "ANTHROPIC": "Claude · Anthropic"}.get(provider)
     if not label:
         raise RuntimeError("Nhà cung cấp khóa chưa được hỗ trợ.")
     _windows_vault()

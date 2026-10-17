@@ -8,12 +8,15 @@ has not been run from this app against a real installation.
 from __future__ import annotations
 
 import subprocess
+import time
 from pathlib import Path
 
+from . import logs
 from .domain import DomainError
 from .service import now
 
 
+foley_log = logs.get("foley")
 FIELDS = ("python_path", "script_path", "model_path", "config_path")
 TIMEOUT_SECONDS = 2 * 3600
 
@@ -81,13 +84,22 @@ class HunyuanFoleyRunner:
         output_dir.mkdir(parents=True, exist_ok=True)
         command = [config["python_path"], config["script_path"], "--model_path", config["model_path"], "--config_path", config["config_path"],
                    "--single_video", str(video), "--single_prompt", prompt, "--output_dir", str(output_dir)]
+        foley_log.info("Generating Foley for %s", video.name)
+        started = time.monotonic()
         try:
             done = subprocess.run(command, cwd=str(Path(config["script_path"]).parent), capture_output=True, text=True, encoding="utf-8", errors="replace",
                                   timeout=TIMEOUT_SECONDS, check=False)
         except subprocess.TimeoutExpired as exc:
+            foley_log.error("Foley for %s stopped at the 2-hour limit", video.name)
             raise DomainError("HunyuanVideo-Foley chạy quá 2 giờ cho một shot; đã dừng.", 409) from exc
         except OSError as exc:
+            foley_log.error("HunyuanVideo-Foley could not run: %s: %s", type(exc).__name__, exc)
             raise DomainError(f"Không chạy được HunyuanVideo-Foley: {type(exc).__name__}.", 409) from exc
+        if done.returncode:
+            foley_log.error("HunyuanVideo-Foley exited %d after %.0f s for %s\n%s", done.returncode, time.monotonic() - started, video.name,
+                            logs.tail(done.stderr or done.stdout))
+        else:
+            foley_log.info("HunyuanVideo-Foley finished in %.0f s for %s", time.monotonic() - started, video.name)
         if done.returncode != 0:
             lines = [line for line in (done.stderr or done.stdout or "").strip().splitlines() if line.strip()]
             raise DomainError("HunyuanVideo-Foley báo lỗi: " + (lines[-1][:300] if lines else f"mã thoát {done.returncode}"), 409)
